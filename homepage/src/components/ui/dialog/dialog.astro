@@ -1,0 +1,7 @@
+---
+const { class: className } = Astro.props;
+---
+
+<dialog id="settingsModal" data-slot="" class={`modal ${className}`}>
+  <slot />
+</dialog>

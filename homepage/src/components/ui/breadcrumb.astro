@@ -1,0 +1,80 @@
+---
+import { Home, ChevronRight } from '@lucide/astro';
+import { getLangFromUrl, useTranslations } from '../../i18n/utils';
+import { PATHS } from '../../configs/paths';
+
+const lang = getLangFromUrl(Astro.url);
+const t = useTranslations(lang);
+
+function normalize(p: string) {
+   return p.replace(/\/$/, '');
+}
+
+function getCrumbsForCurrentPath(pathname: string) {
+   const path = normalize(pathname.replace(/^\/[a-z]{2}/, '')) || '/';
+   for (const key in PATHS) {
+      if (Object.prototype.hasOwnProperty.call(PATHS, key)) {
+         const entry = (PATHS as any)[key];
+         const entryPath = normalize(entry.paths);
+         if (entryPath && path === entryPath && entry.crumbs) {
+            return typeof entry.crumbs === 'function'
+               ? entry.crumbs({ lang, t })
+               : entry.crumbs;
+         }
+      }
+   }
+   return null;
+}
+
+const crumbs = getCrumbsForCurrentPath(Astro.url.pathname);
+---
+
+{
+   crumbs && (
+      <nav aria-label="Breadcrumb" class="mb-6">
+         <ol class="flex flex-wrap items-center space-x-1.5 text-sm text-muted-foreground">
+            {crumbs.map(
+               (
+                  crumb: {
+                     label: { [key: string]: string };
+                     href?: string;
+                     current: boolean;
+                  },
+                  index: number,
+               ) => (
+                  <li class="flex items-center gap-1">
+                     {index === 0 ? (
+                        <a
+                           href={crumb.href}
+                           class="flex items-center hover:text-foreground transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-sm"
+                           aria-label="Go to homepage"
+                        >
+                           <Home class="h-4 w-4" />
+                        </a>
+                     ) : (
+                        <>
+                           <ChevronRight class="h-4 w-4 mx-1 text-muted-foreground/50" />
+                           {crumb.href ? (
+                              <a
+                                 href={crumb.href}
+                                 class="hover:text-foreground transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-sm"
+                              >
+                                 {crumb.label[lang]}
+                              </a>
+                           ) : (
+                              <span
+                                 class="font-medium text-foreground"
+                                 aria-current="page"
+                              >
+                                 {crumb.label[lang]}
+                              </span>
+                           )}
+                        </>
+                     )}
+                  </li>
+               ),
+            )}
+         </ol>
+      </nav>
+   )
+}

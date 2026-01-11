@@ -1,0 +1,211 @@
+---
+import BaseLayout from '../../layouts/base-layout.astro';
+import { getLangFromUrl, useTranslations } from '../../i18n/utils';
+import { PATHS } from '../../configs/paths';
+import Button from '../../components/ui/button.astro';
+
+export const getStaticPaths = () => [{ params: { lang: 'en' } }];
+
+const lang = getLangFromUrl(Astro.url);
+const t = useTranslations(lang);
+---
+
+<BaseLayout
+   title={t('home.title')}
+   description={t('home.description')}
+   keywords={t('home.keywords')}
+>
+   <div class="w-full mx-auto gap-4">
+      {/* Hero Section */}
+      <section
+         class="relative py-16 md:py-24 lg:py-32 border-b border-line-subtle"
+      >
+         {/* Subtle background grid pattern */}
+         <div
+            class="absolute inset-0 opacity-[0.02] pointer-events-none"
+            style={{
+               backgroundImage: `linear-gradient(var(--text-primary) 1px, transparent 1px), linear-gradient(90deg, var(--text-primary) 1px, transparent 1px)`,
+               backgroundSize: '32px 32px',
+            }}
+         >
+         </div>
+
+         <div class="mx-auto relative">
+            <div class="mb-6 md:mb-8">
+               <div
+                  class="font-mono text-xs md:text-sm text-text-tertiary tracking-wider"
+               >
+                  {t('home.hero.missionLabel')}
+               </div>
+            </div>
+
+            <h1
+               class="text-4xl md:text-6xl lg:text-7xl mb-6 md:mb-8 tracking-tight"
+            >
+               {t('home.hero.title')}
+            </h1>
+
+            <p
+               class="text-lg md:text-xl text-text-secondary mb-4 md:mb-6 max-w-2xl leading-relaxed"
+            >
+               {t('home.hero.lead')}
+
+               <p
+                  class="text-sm md:text-base text-text-secondary mb-10 md:mb-12 max-w-150"
+               >
+                  {t('home.hero.tagline')}
+               </p>
+
+               <div class="flex flex-col sm:flex-row gap-3 md:gap-4">
+                  <Button
+                     as="a"
+                     href={PATHS.BLOG.getHref(lang)}
+                     variant="none"
+                     class="px-6 py-3 border border-text-primary text-text-primary hover:bg-text-primary hover:text-background transition-colors text-sm md:text-base font-mono"
+                  >
+                     {t('home.hero.cta')}
+                  </Button>
+                  <Button
+                     as="a"
+                     target="_blank"
+                     rel="noopener noreferrer"
+                     href={PATHS.GITHUB.href()}
+                     variant="none"
+                     class="px-6 py-3 border border-line-subtle text-text-secondary hover:text-text-primary hover:border-text-primary transition-colors text-sm md:text-base text-center"
+                  >
+                     {t('home.hero.github')}
+                  </Button>
+               </div>
+            </p>
+         </div>
+      </section>
+
+      {/* What Kind of Game */}
+      <section class="px-4 md:px-8 py-16 md:py-24 border-b border-line-subtle">
+         <div class="grid grid-cols-1 md:grid-cols-[200px_1fr] gap-6 md:gap-12">
+            <div>
+               <h2 class="font-mono text-xs text-text-tertiary mb-2">
+                  {t('home.objective.label')}
+               </h2>
+            </div>
+
+            <div class="space-y-6 text-text-secondary leading-relaxed">
+               <p>
+                  {t('home.objective.body')}
+               </p>
+            </div>
+         </div>
+      </section>
+
+      {/* Development Status */}
+      <section class="px-4 md:px-8 py-16 md:py-24 border-b border-line-subtle">
+         <div class="grid grid-cols-1 md:grid-cols-[200px_1fr] gap-6 md:gap-12">
+            <div>
+               <div
+                  class="font-mono text-xs text-text-tertiary mb-3 tracking-wider"
+               >
+                  {t('home.developmentStatus.label')}
+               </div>
+            </div>
+
+            <div class="space-y-6">
+               <div class="text-text-secondary leading-relaxed space-y-4">
+                  <p>
+                     {t('home.developmentStatus.bodyPrimary')}
+                  </p>
+                  <p>
+                     {t('home.developmentStatus.bodySecondary')}
+                  </p>
+               </div>
+            </div>
+         </div>
+      </section>
+
+      {/* Navigation Reinforcement */}
+      <section class="px-4 md:px-8 py-16 md:py-24 border-line-subtle">
+         <div class="grid grid-cols-1 sm:grid-cols-2 gap-8">
+            {/* Blog */}
+            <Button
+               as="a"
+               href={PATHS.BLOG.getHref(lang)}
+               variant="none"
+               class="!hover:debug border border-line-subtle p-6 text-left hover:border-text-primary transition-colors group"
+            >
+               <div class="font-mono text-xs text-text-tertiary mb-2">
+                  {t('home.navigation.devBlogLabel')}
+               </div>
+               <div
+                  class="text-lg mb-2 group-hover:text-text-primary transition-colors"
+               >
+                  {t('home.navigation.devBlogTitle')}
+               </div>
+               <div class="text-sm text-text-secondary">
+                  {t('home.navigation.devBlogBody')}
+               </div>
+            </Button>
+
+            {/* Wiki */}
+            <Button
+               as="a"
+               variant="none"
+               disabled
+               class="border border-line-subtle p-6 text-left hover:border-text-primary transition-colors group"
+            >
+               <div class="font-mono text-xs text-text-tertiary mb-2">
+                  {t('home.navigation.wikiLabel')}
+               </div>
+               <div
+                  class="text-lg mb-2 group-hover:text-text-primary transition-colors"
+               >
+                  {t('home.navigation.wikiTitle')}
+               </div>
+               <div class="text-sm text-text-secondary">
+                  {t('home.navigation.wikiBody')}
+               </div>
+            </Button>
+
+            {/* GitHub */}
+            <Button
+               as="a"
+               variant="none"
+               href={PATHS.GITHUB.href()}
+               target="_blank"
+               rel="noopener noreferrer"
+               class="border border-line-subtle p-6 text-left hover:border-text-primary transition-colors group block"
+            >
+               <div class="font-mono text-xs text-text-tertiary mb-2">
+                  {t('home.navigation.gitHubLabel')}
+               </div>
+               <div
+                  class="text-lg mb-2 group-hover:text-text-primary transition-colors"
+               >
+                  {t('home.navigation.gitHubTitle')}
+               </div>
+               <div class="text-sm text-text-secondary">
+                  {t('home.navigation.gitHubBody')}
+               </div>
+            </Button>
+
+            {/* Mail */}
+            <Button
+               as="a"
+               variant="none"
+               href={PATHS.CONTACT.href()}
+               class="border border-line-subtle p-6 text-left hover:border-text-primary transition-colors group block"
+            >
+               <div class="font-mono text-xs text-text-tertiary mb-2">
+                  {t('home.navigation.contactLabel')}
+               </div>
+               <div
+                  class="text-lg mb-2 group-hover:text-text-primary transition-colors"
+               >
+                  {t('home.navigation.contactTitle')}
+               </div>
+               <div class="text-sm text-text-secondary break-all">
+                  {t('home.navigation.contactBody')}
+               </div>
+            </Button>
+         </div>
+      </section>
+   </div>
+</BaseLayout>

@@ -1,0 +1,123 @@
+---
+import Footer from '../components/footer.astro';
+import ConsentBanner from '../components/consent-banner.astro';
+
+import { href } from '../configs/paths';
+
+import { getLangFromUrl, useTranslations } from '../i18n/utils';
+
+import '../styles/index.css';
+import Header from '../components/header.astro';
+
+interface Props {
+   title?: string;
+   description?: string;
+   keywords?: string;
+   image?: string;
+   type?: 'website' | 'article';
+}
+
+const {
+   title,
+   description,
+   keywords,
+   image = '/icons/android-chrome-512x512.png',
+   type = 'website',
+} = Astro.props;
+
+const lang = getLangFromUrl(Astro.url);
+const t = useTranslations(lang);
+
+const pageTitle = title || t('common.title');
+const pageDescription = description || t('common.description');
+
+// const other = lang === 'en' ? 'de' : 'en';
+const thisPath = Astro.url.pathname;
+
+// const swapLangPath = (p: string, from: string, to: string) => {
+//    const parts = p.split('/');
+//    if (parts[1] === from) parts[1] = to;
+//    return parts.join('/');
+// };
+// const swapped = swapLangPath(thisPath, lang, other);
+
+const getBaseUrl = () => {
+   const baseUrl = Astro.site ?? Astro.url;
+   return baseUrl.toString().replace(/^http:/, 'https:');
+};
+
+const abs = (p: string) =>  new URL(p, getBaseUrl()).toString();
+const absImage = new URL(image, getBaseUrl()).toString();
+---
+
+<html lang={lang}>
+   <head>
+      <meta charset="utf-8" />
+      <meta
+         name="viewport"
+         content="width=device-width, initial-scale=1, viewport-fit=cover"
+      />
+      <meta name="description" content={pageDescription} />
+      {keywords && <meta name="keywords" content={keywords} />}
+      <meta name="author" content="S.E.E.D 118" />
+      <title>{pageTitle}</title>
+
+      <link rel="canonical" href={abs(thisPath)} />
+      <link rel="alternate" hreflang={lang} href={abs(thisPath)} />
+      <!-- <link rel="alternate" hreflang={other} href={abs(swapped)} /> -->
+      <link
+         rel="alternate"
+         hreflang="x-default"
+         href={abs(href('HOME', 'en'))}
+      />
+
+      <!-- Open Graph / Facebook -->
+      <meta property="og:type" content={type} />
+      <meta property="og:url" content={abs(thisPath)} />
+      <meta property="og:title" content={pageTitle} />
+      <meta property="og:description" content={pageDescription} />
+      <meta property="og:image" content={absImage} />
+      <!-- <meta property="og:locale" content={lang === 'de' ? 'de_DE' : 'en_US'} /> -->
+      <meta property="og:site_name" content="S.E.E.D 118" />
+
+      <!-- Twitter -->
+      <meta name="twitter:card" content="summary_large_image" />
+      <meta name="twitter:url" content={abs(thisPath)} />
+      <meta name="twitter:title" content={pageTitle} />
+      <meta name="twitter:description" content={pageDescription} />
+      <meta name="twitter:image" content={absImage} />
+
+      <link rel="manifest" href="/manifest.webmanifest" />
+
+      <link
+         rel="apple-touch-icon"
+         sizes="180x180"
+         href="/icons/apple-touch-icon.png"
+      />
+      <link
+         rel="icon"
+         type="image/png"
+         sizes="32x32"
+         href="/icons/favicon-32x32.png"
+      />
+      <link
+         rel="icon"
+         type="image/png"
+         sizes="16x16"
+         href="/icons/favicon-16x16.png"
+      />
+
+      <meta name="theme-color" content="#0b0b0b" />
+   </head>
+
+   <body class="min-h-screen flex flex-col w-full">
+            <Header />
+      <div id="mainContent" class="flex-1 w-full max-w-6xl mx-auto pt-6">
+         <div class="mx-auto max-w-6xl full px-12  ">
+            <slot />
+         </div>
+      </div>
+      <ConsentBanner lan={lang} t={t} />
+      <Footer lan={lang} t={t} />
+   </body>
+</html>

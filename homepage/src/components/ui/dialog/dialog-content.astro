@@ -1,0 +1,10 @@
+---
+const { class: className } = Astro.props;
+---
+
+<div
+  data-slot="dialog-content"
+  class={`modal-box bg-background gap-4 rounded-lg border p-6 shadow-lg duration-200 sm:max-w-lg ${className || ""}`}
+>
+  <slot />
+</div>

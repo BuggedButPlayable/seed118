@@ -1,0 +1,340 @@
+---
+import Button from '../components/ui/button.astro';
+import { Settings, Shield } from '@lucide/astro';
+import Switch from './ui/switch.astro';
+import { getLangFromUrl, useTranslations } from '../i18n/utils';
+
+const lang = getLangFromUrl(Astro.url);
+const t = useTranslations(lang);
+---
+
+{/** Banner for cookie consent **/}
+<div
+   id="cookieBanner"
+   class="fixed bottom-0 left-0 right-0 z-50 border-t bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/90 transition-transform duration-300"
+   style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+   role="dialog"
+   aria-live="polite"
+   aria-label="Cookie Consent"
+   hidden
+>
+   <div class="container mx-auto px-4 py-4">
+      <div class="flex flex-col gap-4">
+         <div class="flex items-start gap-3">
+            <Shield class="h-5 w-5 text-primary mt-0.5 shrink-0" />
+            <div class="flex-1">
+               <h3 class="font-medium text-foreground mb-1">
+                  {t('consent.banner.title')}
+               </h3>
+               <p class="text-sm text-muted-foreground">
+                  {t('consent.banner.text')}
+               </p>
+            </div>
+         </div>
+
+         <div class="flex flex-row items-start sm:item-center gap-2">
+            <div class="flex flex-wrap gap-2">
+               <Button id="btnAcceptAllCookies" size="sm"
+                  >{t('consent.banner.acceptAll')}</Button
+               >
+               <Button id="btnDenyAllCookies" size="sm" variant="outline"
+                  >{t('consent.banner.denyAll')}</Button
+               >
+               <Button class="btnCustomizeCookies" size="sm" variant="outline">
+                  <Settings class="mr-1 h-3 w-3" />
+                  {t('consent.banner.customize')}</Button
+               >
+            </div>
+         </div>
+      </div>
+   </div>
+</div>
+
+{/** Dialog for customizing cookie preferences **/}
+<dialog
+   id="cookieDialog"
+   class="fixed left-1/2 top-1/2 w-[calc(100%-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 rounded-md p-4 sm:w-auto"
+   aria-labelledby="cookieDialogTitle"
+>
+   <form method="dialog">
+      <div id="dialogContent">
+         <div
+            id="dialogHeader"
+            class="flex flex-col gap-2 text-center sm:text-left pb-4"
+         >
+            <div
+               id="dialogTitle"
+               class="flex items-center gap-2 text-lg leading-none font-semibold"
+            >
+               <Settings class="h-4 w-4" />
+               <h3 id="cookieDialogTitle">{t('consent.dialog.title')}</h3>
+            </div>
+            <div id="dialogDescription">
+               <p class="text-muted-foreground text-sm">
+                  {t('consent.dialog.description')}
+               </p>
+            </div>
+         </div>
+
+         <fieldset>
+            <div class="space-y-4">
+               {/* Necessary Cookies */}
+               <div class="flex items-center justify-between">
+                  <div class="space-y-0.5">
+                     <p class="text-sm font-medium flex items-center gap-2">
+                        <Shield class="h-3 w-3" />
+                        {t('consent.dialog.necessary')}
+                     </p>
+                     <p class="text-xs text-muted-foreground">
+                        {t('consent.dialog.necessaryDesc')}
+                     </p>
+                  </div>
+                  <Switch id="consentNecessary" disabled checked />
+               </div>
+
+               {/* Analytics Cookies */}
+               <div class="flex items-center justify-between">
+                  <div class="space-y-0.5">
+                     <p class="text-sm font-medium flex items-center gap-2">
+                        <Shield class="h-3 w-3" />
+                        {t('consent.dialog.analytics')}
+                     </p>
+                     <p class="text-xs text-muted-foreground">
+                        {t('consent.dialog.analyticsDesc')}
+                     </p>
+                  </div>
+                  <Switch id="consentAnalytics" />
+               </div>
+
+               {/* Marketing Cookies */}
+               <div class="flex items-center justify-between">
+                  <div class="space-y-0.5">
+                     <p class="text-sm font-medium flex items-center gap-2">
+                        <Shield class="h-3 w-3" />
+                        {t('consent.dialog.marketing')}
+                     </p>
+                     <p class="text-xs text-muted-foreground">
+                        {t('consent.dialog.marketingDesc')}
+                     </p>
+                  </div>
+                  <Switch id="consentMarketing" />
+               </div>
+
+               {/* Preferences Cookies */}
+               <div class="flex items-center justify-between">
+                  <div class="space-y-0.5">
+                     <p class="text-sm font-medium flex items-center gap-2">
+                        <Shield class="h-3 w-3" />
+                        {t('consent.dialog.preferences')}
+                     </p>
+                     <p class="text-xs text-muted-foreground">
+                        {t('consent.dialog.preferencesDesc')}
+                     </p>
+                  </div>
+                  <Switch id="consentPreferences" />
+               </div>
+            </div>
+         </fieldset>
+
+         <menu class="flex justify-end gap-2 pt-4 border-t mt-4">
+            <Button
+               type="submit"
+               value="cancel"
+               size="sm"
+               variant="outline"
+               formmethod="dialog">{t('consent.dialog.cancel')}</Button
+            >
+            <Button
+               id="btnSaveConsent"
+               value="default"
+               size="sm"
+               type="submit"
+               formmethod="dialog"
+            >
+               {t('consent.dialog.save')}
+            </Button>
+         </menu>
+      </div>
+   </form>
+</dialog>
+
+<script>
+   type ConsentValue = 'granted' | 'denied';
+   interface Consent {
+      analytics: ConsentValue;
+      marketing: ConsentValue;
+      preferences: ConsentValue;
+   }
+
+   const CONSENT_COOKIE_NAME = 'cookie_consent';
+   const CONSENT_COOKIE_DAYS = 365;
+
+   const banner = document.getElementById(
+      'cookieBanner',
+   ) as HTMLDivElement | null;
+   const dialogEl = document.getElementById(
+      'cookieDialog',
+   ) as HTMLDialogElement | null;
+
+   document
+      .querySelectorAll<HTMLButtonElement>('.btnCustomizeCookies')
+      .forEach((btn) => {
+         btn.addEventListener('click', () => {
+            showConsentDialog();
+         });
+      });
+
+   const btnAcceptAll = document.getElementById(
+      'btnAcceptAllCookies',
+   ) as HTMLButtonElement | null;
+   const btnDenyAll = document.getElementById(
+      'btnDenyAllCookies',
+   ) as HTMLButtonElement | null;
+   const btnCustomize = document.getElementById(
+      'btnCustomizeCookies',
+   ) as HTMLButtonElement | null;
+   const btnLater = document.getElementById(
+      'btnLater',
+   ) as HTMLButtonElement | null;
+   const btnSaveConsent = document.getElementById(
+      'btnSaveConsent',
+   ) as HTMLButtonElement | null;
+   const analyticsCheckbox = document.getElementById(
+      'consentAnalytics',
+   ) as HTMLInputElement | null;
+   const marketingCheckbox = document.getElementById(
+      'consentMarketing',
+   ) as HTMLInputElement | null;
+   const preferencesCheckbox = document.getElementById(
+      'consentPreferences',
+   ) as HTMLInputElement | null;
+   const settingsLink = document.getElementById(
+      'cookieSettingsLink',
+   ) as HTMLAnchorElement | null;
+
+   function setCookie(name: string, value: string, days: number): void {
+      const date = new Date();
+      date.setTime(date.getTime() + days * 24 * 60 * 60 * 1000);
+      const expires = `expires=${date.toUTCString()}`;
+      document.cookie = `${name}=${value};${expires};path=/;SameSite=Lax;Secure`;
+   }
+
+   function getCookie(name: string): string | null {
+      const nameEQ = name + '=';
+      const cookies = document.cookie.split(';');
+      for (let i = 0; i < cookies.length; i++) {
+         let cookie = cookies[i];
+         while (cookie.charAt(0) === ' ') cookie = cookie.substring(1);
+         if (cookie.indexOf(nameEQ) === 0) {
+            return cookie.substring(nameEQ.length);
+         }
+      }
+      return null;
+   }
+
+   function showBanner(): void {
+      if (banner) banner.hidden = false;
+   }
+
+   function hideBanner(): void {
+      if (banner) banner.hidden = true;
+   }
+
+   function getConsent(): Consent | null {
+      try {
+         const raw = getCookie(CONSENT_COOKIE_NAME);
+         return raw ? (JSON.parse(decodeURIComponent(raw)) as Consent) : null;
+      } catch {
+         return null;
+      }
+   }
+
+   function setConsent(value: Consent): void {
+      const encoded = encodeURIComponent(JSON.stringify(value));
+      setCookie(CONSENT_COOKIE_NAME, encoded, CONSENT_COOKIE_DAYS);
+   }
+
+   function dispatchConsentChange(value: Consent): void {
+      window.dispatchEvent(
+         new CustomEvent<Consent>('consentchange', { detail: value }),
+      );
+   }
+
+   function showConsentDialog(): void {
+      if (dialogEl) {
+         dialogEl.showModal();
+      }
+   }
+
+   function hideConsentDialog(): void {
+      if (dialogEl) {
+         dialogEl.close();
+      }
+   }
+
+   btnAcceptAll?.addEventListener('click', () => {
+      const consent: Consent = {
+         analytics: 'granted',
+         marketing: 'granted',
+         preferences: 'granted',
+      };
+      setConsent(consent);
+      dispatchConsentChange(consent);
+      hideBanner();
+      hideConsentDialog();
+   });
+
+   btnDenyAll?.addEventListener('click', () => {
+      const consent: Consent = {
+         analytics: 'denied',
+         marketing: 'denied',
+         preferences: 'denied',
+      };
+      setConsent(consent);
+      dispatchConsentChange(consent);
+      hideBanner();
+      hideConsentDialog();
+   });
+
+   btnCustomize?.addEventListener('click', () => {
+      const current = getConsent() ?? {
+         analytics: 'denied',
+         marketing: 'denied',
+         preferences: 'denied',
+      };
+      if (analyticsCheckbox)
+         analyticsCheckbox.checked = current.analytics === 'granted';
+      if (marketingCheckbox)
+         marketingCheckbox.checked = current.marketing === 'granted';
+      if (preferencesCheckbox)
+         preferencesCheckbox.checked = current.preferences === 'granted';
+      showConsentDialog();
+   });
+
+   btnSaveConsent?.addEventListener('click', () => {
+      const consent: Consent = {
+         analytics: analyticsCheckbox?.checked ? 'granted' : 'denied',
+         marketing: marketingCheckbox?.checked ? 'granted' : 'denied',
+         preferences: preferencesCheckbox?.checked ? 'granted' : 'denied',
+      };
+      setConsent(consent);
+      dispatchConsentChange(consent);
+      hideBanner();
+   });
+
+   btnLater?.addEventListener('click', () => {
+      hideBanner();
+   });
+
+   settingsLink?.addEventListener('click', (e) => {
+      e.preventDefault();
+      btnCustomize?.click();
+   });
+
+   const storedConsent = getConsent();
+   if (!storedConsent) {
+      showBanner();
+   } else {
+      dispatchConsentChange(storedConsent);
+   }
+</script>

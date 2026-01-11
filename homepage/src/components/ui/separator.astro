@@ -1,0 +1,71 @@
+---
+export interface Props {
+   class?: string;
+   orientation?: 'horizontal' | 'vertical';
+   decorative?: boolean;
+   label?: string;
+   [key: string]: any;
+}
+
+const {
+   class: className = '',
+   orientation = 'horizontal',
+   decorative = true,
+   label,
+   ...rest
+} = Astro.props as Props;
+---
+
+{
+   (() => {
+      if (orientation === 'vertical') {
+         return (
+            <div
+               data-slot="separator-root"
+               role="separator"
+               aria-orientation="vertical"
+               aria-hidden={decorative ? 'true' : undefined}
+               aria-label={!decorative && label ? label : undefined}
+               class={`w-px h-full bg-neutral-200 dark:bg-neutral-800 ${className}`.trim()}
+               {...rest}
+            >
+               {!decorative && !label && (
+                  <span class="sr-only">
+                     <slot />
+                  </span>
+               )}
+            </div>
+         );
+      }
+
+      if (decorative) {
+         return (
+            <hr
+               data-slot="separator-root"
+               role="separator"
+               aria-orientation="horizontal"
+               aria-hidden="true"
+               class={`w-full border-0 border-t border-neutral-200 dark:border-neutral-800 ${className}`.trim()}
+               {...rest}
+            />
+         );
+      }
+
+      return (
+         <div
+            data-slot="separator-root"
+            role="separator"
+            aria-orientation="horizontal"
+            aria-label={label ? label : undefined}
+            class={`w-full flex items-center gap-4 ${className}`.trim()}
+            {...rest}
+         >
+            <div class="grow border-t border-neutral-200 dark:border-neutral-800" />
+            <div class="text-xs font-medium text-neutral-500 dark:text-neutral-400 select-none">
+               {label ? label : <slot />}
+            </div>
+            <div class="grow border-t border-neutral-200 dark:border-neutral-800" />
+         </div>
+      );
+   })()
+}

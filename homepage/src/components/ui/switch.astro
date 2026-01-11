@@ -1,0 +1,100 @@
+---
+interface Props {
+  id: string;
+  disabled?: boolean;
+  checked?: boolean;
+  ariaLabel?: string;
+  class?: string;
+}
+
+const {
+  id,
+  disabled = false,
+  checked = false,
+  ariaLabel,
+  class: className = "",
+} = Astro.props as Props;
+---
+
+<label class="switch tooltip">
+  <input
+    id={id}
+    type="checkbox"
+    disabled={disabled}
+    checked={checked}
+    aria-label={ariaLabel}
+    class={className}
+  />
+  <span class="slider round"></span>
+</label>
+
+<style>
+  .switch {
+    position: relative;
+    display: inline-block;
+    width: 28px;
+    height: 16px;
+  }
+
+  .switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+  }
+
+  .slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    -webkit-transition: 0.1s;
+    transition: 0.1s;
+  }
+
+  .slider:before {
+    position: absolute;
+    content: "";
+    height: 14px;
+    width: 14px;
+    left: 1px;
+    bottom: 1px;
+    background-color: white;
+    -webkit-transition: 0.1s;
+    transition: 0.1s;
+  }
+
+  input:checked + .slider {
+    background-color: #6d6d6d;
+  }
+
+  input:focus + .slider {
+    box-shadow: 0 0 1px #6d6d6d;
+  }
+
+  input:checked + .slider:before {
+    -webkit-transform: translateX(12px);
+    -ms-transform: translateX(12px);
+    transform: translateX(12px);
+  }
+
+  .slider.round {
+    border-radius: 15px;
+  }
+
+  .slider.round:before {
+    border-radius: 50%;
+  }
+
+  .switch input:disabled + .slider {
+    background-color: #e0e0e0;
+    cursor: not-allowed;
+    opacity: 0.6;
+  }
+
+  .switch input:disabled + .slider:before {
+    background-color: #c0c0c0;
+  }
+</style>

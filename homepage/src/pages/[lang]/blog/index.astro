@@ -1,0 +1,119 @@
+---
+import { getCollection } from 'astro:content';
+import { PATHS } from '../../../configs/paths';
+import PageLayout from '../../../layouts/page-layout.astro';
+import { blog } from '../../../i18n/translations/blog';
+import Header from '../../../components/header.astro';
+
+export function getStaticPaths() {
+   return [{ params: { lang: 'en' } }];
+}
+
+const { lang } = Astro.params as { lang: string };
+const language = lang === 'de' ? 'de' : 'en';
+const pageTitle = blog.title[language];
+const pageDescription = blog.description[language];
+const pageKeywords = blog.keywords[language];
+
+const posts = await getCollection('blog');
+const sorted = posts.sort(
+   (a, b) => b.data.date.valueOf() - a.data.date.valueOf(),
+);
+const totalEntries = sorted.length;
+const newest = sorted[0]?.data.date;
+const oldest = sorted[sorted.length - 1]?.data.date;
+const msPerWeek = 1000 * 60 * 60 * 24 * 7;
+const rangeWeeks =
+   newest && oldest
+      ? Math.max(1, (newest.valueOf() - oldest.valueOf()) / msPerWeek)
+      : 1;
+const frequency = totalEntries ? (totalEntries / rangeWeeks).toFixed(1) : '0.0';
+const periodLabel =
+   newest && oldest
+      ? `${oldest.getFullYear()}.${String(oldest.getMonth() + 1).padStart(2, '0')} -> ${newest.getFullYear()}.${String(newest.getMonth() + 1).padStart(2, '0')}`
+      : blog.stats.notAvailable[language];
+---
+
+<PageLayout
+   title={pageTitle}
+   description={pageDescription}
+   keywords={pageKeywords}
+>
+   {/* Stats Bar */}
+   <div
+      class="gap-8 py-8 border-b border-t border-line-subtle"
+   >
+      <div class="flex items-center gap-16 px-6">
+         <div>
+            <div class="font-mono text-sm text-text-secondary mb-1 pt-1">
+               {blog.stats.totalEntries[language]}
+            </div>
+            <div class="font-mono text-xl">{totalEntries}</div>
+         </div>
+         <div>
+            <div class="font-mono text-sm text-text-secondary mb-1">
+               {blog.stats.period[language]}
+            </div>
+            <div class="font-mono text-sm">{periodLabel}</div>
+         </div>
+         <div>
+            <div class="font-mono text-sm text-text-secondary mb-1">
+               {blog.stats.frequency[language]}
+            </div>
+            <div class="font-mono text-sm">
+               ~{frequency} {blog.stats.perWeek[language]}
+            </div>
+         </div>
+      </div>
+   </div>
+
+   {/* Posts List */}
+   <div class="flex items-center w-full">
+      {
+         sorted.map((post, index) => (
+            <article class="group w-full">
+               <a
+                  href={PATHS.BLOG_POST.getHref(
+                     lang,
+                     (post.data.slug ?? post.slug.split('/').pop()) as string,
+                  )}
+                  class="px-6 block border-b border-line-subtle py-8 hover:bg-muted transition-colors cursor-pointer"
+               >
+                  {/* Entry Header */}
+                  <div class="flex flex-row gap-8">
+                     <div class="font-mono text-sm text-text-tertiary min-w-20">
+                        LOG.{String(post.data.number).padStart(3, '0')}
+                     </div>
+                     <div class="flex-1">
+                        <div class="flex items-center gap-4 mb-2">
+                           <h2 class="text-xl">{post.data.title}</h2>
+                           <div class="font-mono text-xs text-text-tertiary">
+                              {post.data.timestamp}
+                           </div>
+                        </div>
+                        <p class="text-text-secondary leading-relaxed mb-4">
+                           {post.data.excerpt}
+                        </p>
+                        <div class="flex gap-2">
+                           {post.data.tags?.map((tag) => (
+                              <span class="font-mono text-xs px-2 py-1 border border-line-subtle text-text-secondary">
+                                 {tag}
+                              </span>
+                           ))}
+                        </div>
+                     </div>
+                  </div>
+               </a>
+            </article>
+         ))
+      }
+   </div>
+
+   {/* Load More */}
+   <!-- <div class="mt-12 pt-8 border-t border-[var(--line-subtle)] text-center">
+      <button
+         class="text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
+      >
+         Load Earlier Entries (remaining)
+      </button> -->
+</PageLayout>

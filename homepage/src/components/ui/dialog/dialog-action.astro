@@ -1,0 +1,9 @@
+---
+const { class: className } = Astro.props;
+---
+
+<div data-slot="dialog-action" class={`modal-action ${className || ""}`}>
+  <form method="dialog">
+    <slot />
+  </form>
+</div>

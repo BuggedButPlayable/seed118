@@ -1,0 +1,344 @@
+---
+import { BookOpen, House, Menu, MessageCircle, X } from '@lucide/astro';
+import Button from './ui/button.astro';
+import { getLangFromUrl, useTranslations } from '../i18n/utils';
+import { PATHS } from '../configs/paths';
+
+const lang = getLangFromUrl(Astro.url);
+const t = useTranslations(lang);
+
+const currentPath = Astro.url.pathname;
+
+const navItems = [
+   {
+      key: 'blog',
+      label: t('nav.blog'),
+      href: PATHS.BLOG.getHref(lang),
+      icon: BookOpen,
+   },
+   // {
+   //    key: 'wiki',
+   //    label: t('nav.wiki'),
+   //    icon: MessageCircle,
+   //    href: PATHS.CONTACT.getHref(lang),
+   // },
+   // {
+   //    key: 'discord',
+   //    label: t('nav.discord'),
+   //    icon: MessageCircle,
+   //    href: PATHS.CONTACT.getHref(lang),
+   // },
+];
+---
+
+<header
+   class="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60"
+>
+   <nav
+      class="hidden md:flex items-rights justify-center space-x-6"
+      role="navigation"
+      aria-label="Main Navigation"
+   >
+      <div id="headerContainer" class="container mx-auto max-w-6xl full px-12">
+         <div
+            id="headerContent"
+            class="mx-auto py-6 flex items-center justify-between"
+         >
+            {/* Logo */}
+            <a
+               hreflang={lang}
+               href={PATHS.HOME.getHref(lang)}
+               class="font-mono text-sm tracking-wider hover:opacity-60 transition-opacity"
+               style="height:100%"
+            >
+               S.E.E.D 118
+            </a>
+
+            {/* Desktop Navigation */}
+            <div class="flex gap-8">
+               {
+                  navItems.map((item) => {
+                     return (
+                        <a
+                           href={item.href}
+                           class={`text-sm transition-colors ${
+                              currentPath === item.key
+                                 ? 'text-primary'
+                                 : 'text-text-secondary hover:text-primary'
+                           }`}
+                        >
+                           {item.label}
+                        </a>
+                     );
+                  })
+               }
+            </div>
+         </div>
+      </div>
+
+      {/* Search + Controls */}
+      <div
+         id="headerControls"
+         class="flex items-center space-x-2 justify-self-end"
+      >
+         {/* Mobile Menu */}
+         <div id="mobileMenuToggle" class="border-border md:hidden">
+            <Button
+               id="btnMobileMenuToggle"
+               variant="ghost"
+               aria-expanded="false"
+               aria-controls="mobileMenuNavigation"
+               aria-label="Open main menu"
+            >
+               <Menu class="icon-menu" />
+               <X class="icon-close hidden" />
+            </Button>
+         </div>
+      </div>
+   </nav>
+</header>
+
+<div
+   role="dialog"
+   id="mobileMenuNavigation"
+   aria-modal="true"
+   aria-labelledby="mobileMenuTitle"
+   class="fixed z-50 top-16 left-0 right-0 bottom-0 w-full bg-white shadow-lg translate-x-full border-t flex flex-col"
+>
+   {/* Header */}
+   <div class="flex-none p-6 border-b bg-accent/5">
+      <div class="flex items-center justify-between mb-4 max-w-225 mx-auto relative">
+         <h2 id="mobileMenuTitle" class="font-medium text-lg">Menu</h2>
+      </div>
+   </div>
+
+   {/* Main Content */}
+   <div class="flex-1 overflow-y-auto">
+      <div class="p-6 space-y-8">
+         {/* Quick Access */}
+         <div>
+            <a
+               href={PATHS.HOME.getHref(lang)}
+               class={`flex items-center gap-3 w-full p-3 transition-colors text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-sm ${
+                  currentPath === 'home'
+                     ? 'bg-primary/10 text-primary'
+                     : 'hover:bg-accent/50 text-foreground'
+               }`}
+            >
+               <House class="h-5 w-5 text-primary" />
+               <span class="font-medium">Home</span>
+            </a>
+         </div>
+
+         {/* Main Navigation */}
+         <div>
+            <h3
+               class="text-sm font-medium text-muted-foreground mb-3 uppercase tracking-wide"
+            >
+               {t('header.nav.mobile.title')}
+            </h3>
+            <nav
+               class="space-y-1"
+               role="navigation"
+               aria-label="Mobile navigation"
+            >
+               {
+                  navItems.map((item) => {
+                     // Regular links
+                     return (
+                        <a
+                           href={item.href}
+                           class={`flex items-center gap-3 w-full p-3 transition-colors text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-sm ${
+                              currentPath === item.key
+                                 ? 'bg-primary/10 text-primary'
+                                 : 'hover:bg-accent/50 text-foreground'
+                           }`}
+                        >
+                           <span
+                              class={
+                                 currentPath === item.key
+                                    ? 'text-primary'
+                                    : 'text-muted-foreground'
+                              }
+                           >
+                              <item.icon class="h-5 w-5" />
+                           </span>
+                           {item.label}
+                        </a>
+                     );
+                  })
+               }
+            </nav>
+         </div>
+      </div>
+   </div>
+
+   {/* Mobile Footer Links */}
+   <div class="flex-none p-6 border-t bg-accent/5">
+      <div class="grid grid-cols-3 gap-1 text-xs">
+         <a
+            href={PATHS.PRIVACY.getHref(lang)}
+            class="text-center text-muted-foreground hover:text-primary transition-colors p-2"
+         >
+            {t('nav.privacy')}
+         </a>
+         <a
+            href={PATHS.IMPRINT.getHref(lang)}
+            class="text-center text-muted-foreground hover:text-primary transition-colors p-2"
+         >
+            {t('nav.imprint')}
+         </a>
+         <a
+            href={PATHS.TERMS.getHref(lang)}
+            class="text-center text-muted-foreground hover:text-primary transition-colors p-2"
+         >
+            {t('nav.terms')}
+         </a>
+      </div>
+
+      <script>
+         const btnMobileMenuToggle = document.getElementById(
+            'btnMobileMenuToggle',
+         );
+         const mobileMenuNavigation = document.getElementById(
+            'mobileMenuNavigation',
+         );
+
+         function openMobileMenu() {
+            mobileMenuNavigation?.classList.remove('translate-x-full');
+            btnMobileMenuToggle?.setAttribute('aria-expanded', 'true');
+            btnMobileMenuToggle?.setAttribute('data-open', '1');
+            btnMobileMenuToggle
+               ?.querySelector('.icon-menu')
+               ?.classList.add('hidden');
+            btnMobileMenuToggle
+               ?.querySelector('.icon-close')
+               ?.classList.remove('hidden');
+         }
+
+         function closeMobileMenu() {
+            mobileMenuNavigation?.classList.add('translate-x-full');
+            btnMobileMenuToggle?.setAttribute('aria-expanded', 'false');
+            btnMobileMenuToggle?.setAttribute('data-open', '0');
+            btnMobileMenuToggle
+               ?.querySelector('.icon-menu')
+               ?.classList.remove('hidden');
+            btnMobileMenuToggle
+               ?.querySelector('.icon-close')
+               ?.classList.add('hidden');
+         }
+
+         btnMobileMenuToggle?.addEventListener('click', () => {
+            if (btnMobileMenuToggle?.getAttribute('data-open') === '1') {
+               closeMobileMenu();
+            } else {
+               openMobileMenu();
+            }
+         });
+
+         document?.addEventListener('keydown', (e) => {
+            if (
+               e.key === 'Escape' &&
+               mobileMenuNavigation?.classList.contains('translate-x-full') ===
+                  false
+            ) {
+               closeMobileMenu();
+            }
+         });
+
+         // Mega Menu functionality
+         const megaMenuTrigger = document.querySelector('[data-mega-menu]');
+         const megaMenu = document.getElementById('toolsMegaMenu');
+         const chevron = document.querySelector('[data-chevron]');
+         let hideTimeout: ReturnType<typeof setTimeout> | undefined;
+
+         function showMegaMenu() {
+            clearTimeout(hideTimeout);
+            if (megaMenu) {
+               megaMenu.classList.remove('hidden');
+               // Trigger reflow for animation
+               megaMenu.offsetHeight;
+               megaMenu.classList.remove('opacity-0', 'translate-y-[-10px]');
+               megaMenu.classList.add('opacity-100', 'translate-y-0');
+               chevron?.classList.add('rotate-180');
+            }
+         }
+
+         function hideMegaMenu() {
+            if (megaMenu) {
+               megaMenu.classList.remove('opacity-100', 'translate-y-0');
+               megaMenu.classList.add('opacity-0', 'translate-y-[-10px]');
+               chevron?.classList.remove('rotate-180');
+               hideTimeout = setTimeout(() => {
+                  megaMenu.classList.add('hidden');
+               }, 200);
+            }
+         }
+
+         megaMenuTrigger?.addEventListener('mouseenter', showMegaMenu);
+         megaMenuTrigger?.addEventListener('mouseleave', () => {
+            hideTimeout = setTimeout(hideMegaMenu, 100);
+         });
+
+         megaMenu?.addEventListener('mouseenter', () => {
+            clearTimeout(hideTimeout);
+         });
+         megaMenu?.addEventListener('mouseleave', hideMegaMenu);
+
+         // Close mega menu on Escape
+         document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+               hideMegaMenu();
+            }
+         });
+
+         // Mobile submenu toggles
+         const mobileMenuToggles = document.querySelectorAll(
+            '.mobile-menu-toggle',
+         );
+
+         mobileMenuToggles.forEach((toggle) => {
+            toggle.addEventListener('click', () => {
+               const menuId = toggle.getAttribute('data-menu');
+               const submenu = document.querySelector(
+                  `[data-submenu="${menuId}"]`,
+               );
+               const chevronIcon = toggle.querySelector(
+                  `[data-chevron-mobile="${menuId}"]`,
+               );
+
+               if (submenu) {
+                  const isHidden = submenu.classList.contains('hidden');
+
+                  // Close all other submenus
+                  document
+                     .querySelectorAll('.mobile-submenu')
+                     .forEach((menu) => {
+                        if (menu !== submenu) {
+                           menu.classList.add('hidden');
+                        }
+                     });
+
+                  // Reset all chevrons
+                  document
+                     .querySelectorAll('[data-chevron-mobile]')
+                     .forEach((chev) => {
+                        if (chev !== chevronIcon) {
+                           chev.classList.remove('rotate-180');
+                        }
+                     });
+
+                  // Toggle current submenu
+                  if (isHidden) {
+                     submenu.classList.remove('hidden');
+                     chevronIcon?.classList.add('rotate-180');
+                  } else {
+                     submenu.classList.add('hidden');
+                     chevronIcon?.classList.remove('rotate-180');
+                  }
+               }
+            });
+         });
+      </script>
+   </div>
+</div>

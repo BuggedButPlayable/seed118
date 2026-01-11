@@ -1,0 +1,205 @@
+---
+import BaseLayout from '../../../layouts/base-layout.astro';
+import { getCollection, type CollectionEntry } from 'astro:content';
+import { Clock } from '@lucide/astro';
+import { PATHS } from '../../../configs/paths';
+import Button from '../../../components/ui/button.astro';
+
+export const prerender = true;
+
+export async function getStaticPaths() {
+   const posts = await getCollection('blog');
+   const paths: any[] = [];
+   const slugs = new Set<string>();
+
+   posts.forEach((post) => {
+      const data: any = post.data;
+      const slug = data.slug ?? post.slug.split('/').pop();
+      slugs.add(slug);
+   });
+
+   slugs.forEach((slug) => {
+      paths.push({ params: { lang: 'en', slug } });
+   });
+
+   return paths;
+}
+
+const { lang, slug } = Astro.params as { lang: string; slug: string };
+const all = await getCollection('blog');
+
+const pickSlug = (entry: CollectionEntry<'blog'>) =>
+   (entry.data as any).slug ?? entry.slug.split('/').pop();
+
+let entry = all.find(
+   (e) => pickSlug(e) === slug && ((e.data as any).lang ?? 'en') === lang,
+);
+
+if (!entry) {
+   entry = all.find(
+      (e) => pickSlug(e) === slug && ((e.data as any).lang ?? 'en') === 'en',
+   ) as any;
+}
+
+if (!entry) {
+   return Astro.redirect(`/${lang}/blog`);
+}
+
+const { Content } = await entry.render();
+const data: any = entry.data;
+
+const title: string = data.title;
+const description: string = data.description ?? data.excerpt ?? '';
+const tags: string[] = Array.isArray(data.tags) ? data.tags : [];
+const readTime: string | number | undefined = data.readTime;
+const readTimeLabel =
+   typeof readTime === 'number'
+      ? `${readTime} min read`
+      : readTime
+      ? `${readTime} min read`
+      : null;
+const published = data.date instanceof Date ? data.date : new Date(data.date);
+const modified = data.updated ? new Date(data.updated) : published;
+const inLanguage = data.lang ?? lang;
+
+const url = new URL(Astro.url);
+const canonical = url.href;
+
+const alternates = all.filter((e) => pickSlug(e) === (data.slug ?? slug));
+
+const formatDate = new Intl.DateTimeFormat(
+   inLanguage === 'de' ? 'de-DE' : 'en-US',
+   { dateStyle: 'medium' },
+).format;
+
+const siteOrigin = Astro.site ? (Astro.site as URL).origin : url.origin;
+
+const getDate = (e: CollectionEntry<'blog'>) =>
+   (e.data as any).date instanceof Date
+      ? (e.data as any).date
+      : new Date((e.data as any).date);
+
+const sameLangSorted = all
+   .filter(
+      (e) =>
+         ((e.data as any).lang ?? (e.slug.startsWith('de/') ? 'de' : 'en')) ===
+         inLanguage,
+   )
+   .sort((a, b) => getDate(a).getTime() - getDate(b).getTime());
+
+const idx = sameLangSorted.findIndex(
+   (e) => pickSlug(e) === pickSlug(entry as any),
+);
+const prevEntry = idx > 0 ? sameLangSorted[idx - 1] : null;
+const nextEntry =
+   idx >= 0 && idx < sameLangSorted.length - 1 ? sameLangSorted[idx + 1] : null;
+
+const prevHref = prevEntry
+   ? `/${inLanguage}/blog/${(prevEntry.data as any).slug ?? prevEntry.slug.split('/').pop()}/`
+   : null;
+const nextHref = nextEntry
+   ? `/${inLanguage}/blog/${(nextEntry.data as any).slug ?? nextEntry.slug.split('/').pop()}/`
+   : null;
+
+const prevTitle = prevEntry ? (prevEntry.data as any).title : null;
+const nextTitle = nextEntry ? (nextEntry.data as any).title : null;
+
+const jsonLd = {
+   '@context': 'https://schema.org',
+   '@type': 'BlogPosting',
+   headline: title,
+   description,
+   inLanguage,
+   datePublished: published.toISOString(),
+   dateModified: modified.toISOString(),
+   mainEntityOfPage: canonical,
+   author: { '@type': 'Organization', name: 'seed118' },
+   publisher: {
+      '@type': 'Organization',
+      name: 'seed118',
+      logo: { '@type': 'ImageObject', url: `${siteOrigin}/icon.png` },
+   },
+   keywords: tags.join(', '),
+   isFamilyFriendly: true,
+};
+---
+
+<BaseLayout title={title} description={description}>
+   <Fragment slot="head">
+      <link rel="canonical" href={canonical} />
+      {
+         alternates.map((alt) => {
+            const l =
+               (alt.data as any).lang ??
+               (alt.slug.startsWith('de/') ? 'de' : 'en');
+            const s = (alt.data as any).slug ?? alt.slug.split('/').pop();
+            return (
+               <link
+                  rel="alternate"
+                  hreflang={l}
+                  href={`${siteOrigin}/${l}/blog/${s}/`}
+               />
+            );
+         })
+      }
+      {/* x-default to EN */}
+      <link
+         rel="alternate"
+         hreflang="x-default"
+         href={`${siteOrigin}/en/blog/${data.slug ?? slug}/`}
+      />
+      <meta property="og:type" content="article" />
+      <meta property="og:title" content={title} />
+      <meta property="og:description" content={description} />
+      <meta name="twitter:card" content="summary_large_image" />
+      <meta name="twitter:title" content={title} />
+      <meta name="twitter:description" content={description} />
+      <!-- <script type="application/ld+json">{JSON.stringify(jsonLd)}</script> -->
+   </Fragment>
+
+   {/* Navigation */}
+   <div class="mb-12">
+      <Button
+         as="a"
+         variant="none"
+         href={PATHS.BLOG_POST.getHref(lang)}
+         class="-ml-4 text-sm text-text-secondary hover:text-primary transition-colors"
+      >
+         ← Return to log index
+      </Button>
+   </div>
+
+   <article>
+      {/* Header */}
+      <div class="border-b border-line-subtle pb-8 mb-12">
+         <div class="font-mono text-sm text-text-tertiary mb-4">
+            LOG.{data.id} / ENGINEERING ENTRY
+         </div>
+         <h1 class="text-4xl mb-6">{title}</h1>
+         <div class="flex items-center gap-6 text-sm text-text-secondary">
+            <div class="font-mono">{data.timestamp}</div>
+            {readTimeLabel && (
+               <div class="flex items-center gap-2 font-mono">
+                  <Clock class="w-4 h-4" aria-hidden="true" />
+                  <span>{readTimeLabel}</span>
+               </div>
+            )}
+            <div class="flex gap-2">
+               {
+                  data.tags?.map((tag: string) => (
+                     <span class="font-mono text-xs px-2 py-1 border border-line-subtle">
+                        {tag}
+                     </span>
+                  ))
+               }
+            </div>
+         </div>
+      </div>
+
+      {/* Content Sections */}
+      <div class="text-text-secondary whitespace-pre-line">
+         <Content />
+      </div>
+
+   </article>
+</BaseLayout>

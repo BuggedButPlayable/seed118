@@ -1,0 +1,23 @@
+@layer utilities {
+   .debug {
+      border: 1px solid red;
+   }
+
+   .debug-green {
+      border: 1px solid green;
+   }
+
+   .debug-blue {
+      border: 1px solid blue;
+   }
+}
+
+.prose h2 {
+   @apply text-3xl font-medium mb-4;
+}
+.prose p {
+   @apply text-muted-foreground leading-relaxed;
+}
+.prose ul {
+   @apply list-disc ml-6;
+}

@@ -1,0 +1,141 @@
+---
+import { Settings } from '@lucide/astro';
+import { PATHS } from '../configs/paths';
+import { getLangFromUrl, useTranslations } from '../i18n/utils';
+
+const lang = getLangFromUrl(Astro.url);
+const t = useTranslations(lang);
+
+const legalLinks = [
+   { name: t('nav.privacy'), href: PATHS.PRIVACY.getHref(lang) },
+   { name: t('nav.terms'), href: PATHS.TERMS.getHref(lang) },
+   { name: t('nav.imprint'), href: PATHS.IMPRINT.getHref(lang) },
+];
+
+const supportLinks = [
+   {
+      name: t('nav.contact'),
+      href: PATHS.CONTACT.href(),
+      disabled: false,
+   },
+];
+
+const infoLinks = [
+   {
+      name: t('nav.blog'),
+      href: PATHS.BLOG.getHref(lang),
+      disabled: false,
+   },
+   {
+      name: t('nav.github'),
+      href: PATHS.GITHUB.href(),
+      disabled: false,
+   },
+      {
+      name: t('nav.wiki'),
+      disabled: true,
+   },
+];
+---
+
+<footer class="border-t bg-muted/30 w-full flex items-center">
+   <div
+      id="footerContainer"
+      class="py-12 container mx-auto max-w-6xl full px-12"
+   >
+      <div id="footerLinks" class="flex justify-between">
+         {/* Legal */}
+         <nav aria-label="Footer - Legal">
+            <h3 class="mb-4 text-sm font-medium text-foreground">
+               {t('footer.legal')}
+            </h3>
+            <ul class="space-y-2">
+               {
+                  legalLinks.map((link) => (
+                     <li>
+                        <a
+                           href={link.href}
+                           class="text-sm text-muted-foreground hover:text-primary transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-sm"
+                        >
+                           {link.name}
+                        </a>
+                     </li>
+                  ))
+               }
+            </ul>
+         </nav>
+
+         {/* Support */}
+         <nav aria-label="Footer - Support">
+            <h3 class="mb-4 text-sm font-medium text-foreground">
+               {t('footer.support')}
+            </h3>
+            <ul class="space-y-2">
+               <li>
+                  <button
+                     type="button"
+                     class="btnCustomizeCookies text-sm text-muted-foreground hover:text-primary transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-sm flex items-center gap-1"
+                  >
+                     <Settings class="h-3 w-3" />
+                     {t('nav.cookieSettings')}
+                  </button>
+               </li>
+               {
+                  supportLinks.map((support) => (
+                     <li>
+                        <a
+                           aria-disabled={support.disabled}
+                           href={support.href}
+                           class={`text-sm text-muted-foreground hover:text-primary transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-sm ${
+                              support.disabled &&
+                              'pointer-events-none text-gray-300! cursor-not-allowed'
+                           }`}
+                        >
+                           {support.name}
+                        </a>
+                     </li>
+                  ))
+               }
+            </ul>
+         </nav>
+
+         {/* Language & Info */}
+         <nav aria-label="Language - Info">
+            <h3 class="mb-4 text-sm font-medium text-foreground">
+               {t('footer.languageInfo')}
+            </h3>
+
+            {/* Language Switcher */}
+            <!-- <LanguageSwitcher /> -->
+
+            {/* Info Links */}
+            <ul class="space-y-2">
+               {
+                  infoLinks.map((info) => (
+                     <li>
+                        <a
+                           aria-disabled={info.disabled}
+                           href={info.href}
+                           class={`inline-block text-sm text-muted-foreground hover:text-primary transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-sm ${
+                              info.disabled &&
+                              'pointer-events-none text-gray-300! cursor-not-allowed'
+                           }`}
+                        >
+                           {info.name}
+                        </a>
+                     </li>
+                  ))
+               }
+            </ul>
+         </nav>
+      </div>
+
+      <div id="footerLegal" class="mt-8 pt-8 border-t border-border/50">
+         <div
+            class="flex flex-col md:flex-row justify-between items-center text-muted-foreground text-xs gap-4"
+         >
+            <p>{t('footer.copyrightNotice')}</p>
+         </div>
+      </div>
+   </div>
+</footer>

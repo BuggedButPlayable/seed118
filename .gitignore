@@ -1,9 +1,18 @@
-# Created by https://www.toptal.com/developers/gitignore/api/astro,visualstudiocode
-# Edit at https://www.toptal.com/developers/gitignore?templates=astro,visualstudiocode
+
+### Node ###
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.pnpm-debug.log*
+
+# Dependency directories
+node_modules/
+jspm_packages/
 
 ### Astro ###
-# Gitignore template for Astro projects
-# Ignore content collection generated files
 .astro
 
 ### VisualStudioCode ###
@@ -21,10 +30,17 @@
 *.vsix
 
 ### VisualStudioCode Patch ###
-# Ignore all local history of files
 .history
 .ionide
 
+# dotenv environment variable files
 .env
+.env.development.local
+.env.test.local
+.env.production.local
+.env.local
 
-# End of https://www.toptal.com/developers/gitignore/api/astro,visualstudiocode
+.htaccess
+
+dist/
+.DS_Store

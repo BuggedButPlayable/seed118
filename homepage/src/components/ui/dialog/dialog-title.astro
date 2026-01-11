@@ -1,0 +1,10 @@
+---
+const { class: className } = Astro.props;
+---
+
+<div
+  data-slot="dialog-title"
+  class={`text-lg leading-none font-semibold ${className || ""}`}
+>
+  <slot />
+</div>

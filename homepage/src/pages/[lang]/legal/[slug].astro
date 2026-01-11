@@ -1,0 +1,42 @@
+---
+import { PATHS } from '../../../configs/paths';
+import { translations } from '../../../i18n/translation';
+import PageLayout from '../../../layouts/page-layout.astro';
+import { getCollection, getEntry } from 'astro:content';
+
+export async function getStaticPaths() {
+   const entries = await getCollection('legal');
+
+   return entries.map((entry) => {
+      const [lang, slug] = entry.slug.split('/');
+      return { params: { lang, slug } };
+   });
+}
+
+const { lang, slug } = Astro.params as { lang: string; slug: string };
+const language = lang === 'de' ? 'de' : 'en';
+const legalTranslations = {
+   imprint: translations.imprint,
+   'privacy-policy': translations.privacyPolicy,
+   'terms-of-service': translations.termsOfService,
+} as const;
+const slugKey = slug.toString() as keyof typeof legalTranslations;
+
+const entry = await getEntry('legal', `${lang}/${slug}`);
+
+if (!entry) {
+   return Astro.redirect(PATHS.NOT_FOUND.getHref(lang));
+}
+
+const { Content } = await entry.render();
+---
+
+<PageLayout
+   title={legalTranslations[slugKey]?.title?.[language] ?? slug}
+   description={legalTranslations[slugKey]?.description?.[language] ?? ''}
+   keywords={legalTranslations[slugKey]?.keywords?.[language] ?? ''}
+>
+   <div class="prose prose-gray dark:prose-invert max-w-none space-y-4 mb-8">
+      <Content />
+   </div>
+</PageLayout>
