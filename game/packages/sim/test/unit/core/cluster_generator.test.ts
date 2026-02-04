@@ -55,6 +55,7 @@ describe('generateResourceId', () => {
         generateResourceId(worldTile, 42, mockResourceDef);
         
         expect(hash2iSpy).toHaveBeenCalledTimes(9);
+        expect(false).toBe(true);
     });
 
     it('should handle tiles at cell boundaries correctly', () => {

@@ -32,7 +32,15 @@ game/
 npm install
 ```
 
+This will also set up git hooks automatically (via husky).
+
 ## Development
+
+### Pre-commit Hook
+
+A **pre-commit hook** automatically runs all tests before each commit. If any test fails, the commit will be aborted.
+
+```
 
 ### Running Tests
 

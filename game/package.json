@@ -2,10 +2,12 @@
   "scripts": {
     "test": "vitest --run",
     "test:watch": "vitest",
-    "coverage": "vitest run --coverage"
+    "coverage": "vitest run --coverage",
+    "prepare": "husky"
   },
   "devDependencies": {
     "@vitest/coverage-v8": "^4.0.18",
+    "husky": "^9.0.11",
     "vitest": "^4.0.18"
   }
 }
