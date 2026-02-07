@@ -11,8 +11,17 @@ export class StructureStore {
 
     private structures: Map<StructureId, StructureRecord> = new Map();
 
-    constructor() {
+    constructor(structures?: StructureRecord[]) {
         this.nextId = 1
+        
+        if (structures) {
+            for (const structure of structures) {
+                this.structures.set(structure.id, structure);
+                if (structure.id >= this.nextId) {
+                    this.nextId = structure.id + 1;
+                }
+            }
+        }
     }
 
     /**

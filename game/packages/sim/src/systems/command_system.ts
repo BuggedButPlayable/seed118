@@ -4,9 +4,10 @@ import { Event, EventType, RejectReason } from "../types/events";
 import { WorldState } from "../state/world_state";
 import { GridModel } from "../grid/grid_model";
 import { STRUCTURE_ID_NONE } from "../core/constants";
-import { computeFootprintTiles, rotateOffsets } from "../grid/grid_math";
+import { computeFootprintTiles, rotateOffsets, tileToChunk } from "../grid/grid_math";
 import { getStructureDefinitionById } from "../defs/structure_registry";
 import { StructureRecord } from "../types/structure";
+import { dedupeChunkCoords } from "../save/utils.";
 
 /**
  * The CommandSystem processes player commands and updates the world state and grid model accordingly.
@@ -103,7 +104,8 @@ export class CommandSystem {
             grid.setStructureIdAt(tileCoord, createdStructure.id);
         }
 
-        grid.setChunkPersistent(footprintTiles);
+        const chunkCoords = dedupeChunkCoords(footprintTiles.map(tile => tileToChunk(tile)));
+        grid.setChunkPersistent(chunkCoords);
 
         outEvents.push({
             type: EventType.StructurePlaced,
