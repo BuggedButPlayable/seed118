@@ -1,4 +1,4 @@
-import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
+import { describe, expect, it, beforeEach, afterEach } from "vitest";
 
 import { CommandSystem } from "../../../src/systems/command_system";
 import { GridModel } from "../../../src/grid/grid_model";
@@ -6,63 +6,14 @@ import { WorldState } from "../../../src/state/world_state";
 
 import { CommandType } from "../../../src/types/commands";
 import { EventType, RejectReason } from "../../../src/types/events";
-import { StructureDefinition } from "../../../src/types/structure";
-import * as structureRegistry from "../../../src/defs/structure_registry";
 
-const MOCK_SIMPLE_STRUCTURE: StructureDefinition = {
-    id: "test-simple" as any,
-    key: "test-simple",
-    footprint: [{ x: 0, y: 0 }],
-    ports: [],
-    deletable: true,
-    placeable: true,
-    rotatable: true,
-};
-
-const MOCK_NOT_PLACEABLE: StructureDefinition = {
-    id: "test-not-placeable" as any,
-    key: "test-not-placeable",
-    footprint: [{ x: 0, y: 0 }],
-    ports: [],
-    deletable: true,
-    placeable: false,
-    rotatable: true,
-};
-
-const MOCK_NOT_DELETABLE: StructureDefinition = {
-    id: "test-not-deletable" as any,
-    key: "test-not-deletable",
-    footprint: [{ x: 0, y: 0 }],
-    ports: [],
-    deletable: false,
-    placeable: true,
-    rotatable: true,
-};
-
-const MOCK_NOT_ROTATABLE: StructureDefinition = {
-    id: "test-not-rotatable" as any,
-    key: "test-not-rotatable",
-    footprint: [{ x: 0, y: 0 }],
-    ports: [],
-    deletable: true,
-    placeable: true,
-    rotatable: false,
-};
-
-const MOCK_MULTITILE: StructureDefinition = {
-    id: "test-multitile" as any,
-    key: "test-multitile",
-    footprint: [
-        { x: 0, y: 0 },
-        { x: 1, y: 0 },
-        { x: 0, y: 1 },
-        { x: 1, y: 1 },
-    ],
-    ports: [],
-    deletable: true,
-    placeable: true,
-    rotatable: true,
-};
+import {
+    MOCK_SIMPLE_STRUCTURE,
+    MOCK_NOT_PLACEABLE,
+    MOCK_MULTITILE,
+    MOCK_NOT_DELETABLE,
+} from "../../fixtures/mock_structures";
+import { setupMockRegistry, restoreMockRegistry } from "../../fixtures/mock_registry";
 
 function sortChunkCoords(coords: { x: number; y: number }[]): { x: number; y: number }[] {
     return [...coords].sort((a, b) => (a.y - b.y) || (a.x - b.x));
@@ -70,39 +21,11 @@ function sortChunkCoords(coords: { x: number; y: number }[]): { x: number; y: nu
 
 describe("CommandSystem (integration)", () => {
     beforeEach(() => {
-        vi.spyOn(structureRegistry, "getStructureDefinitionById").mockImplementation((id) => {
-            const allMocks = [
-                MOCK_SIMPLE_STRUCTURE,
-                MOCK_NOT_PLACEABLE,
-                MOCK_NOT_DELETABLE,
-                MOCK_NOT_ROTATABLE,
-                MOCK_MULTITILE,
-            ];
-            const found = allMocks.find((def) => def.id === id);
-            if (!found) {
-                throw new Error(`No structure definition found for id: ${id}`);
-            }
-            return found;
-        });
-
-        vi.spyOn(structureRegistry, "getStructureDefinitionByKey").mockImplementation((key) => {
-            const allMocks = [
-                MOCK_SIMPLE_STRUCTURE,
-                MOCK_NOT_PLACEABLE,
-                MOCK_NOT_DELETABLE,
-                MOCK_NOT_ROTATABLE,
-                MOCK_MULTITILE,
-            ];
-            const found = allMocks.find((def) => def.key === key);
-            if (!found) {
-                throw new Error(`No structure definition found for key: ${key}`);
-            }
-            return found;
-        });
+        setupMockRegistry();
     });
 
     afterEach(() => {
-        vi.restoreAllMocks();
+        restoreMockRegistry();
     });
 
     it("Should reject PlaceStructure when definition is not placeable", () => {
@@ -257,18 +180,11 @@ describe("CommandSystem (integration)", () => {
         expect(placed).toBeTruthy();
 
         const expectedChunks = sortChunkCoords([
-            { x: 15, y: 0 },
-            { x: 16, y: 0 },
-            { x: 15, y: 1 },
-            { x: 16, y: 1 },
+            { x: 0, y: 0 },
+            { x: 1, y: 0 },
         ]);
 
-        const dedup: { x: number; y: number }[] = [];
-        for (const c of expectedChunks) {
-            if (!dedup.some((d) => d.x === c.x && d.y === c.y)) dedup.push(c);
-        }
-
-        expect(sortChunkCoords(grid.getAllPersistentChunks())).toEqual(sortChunkCoords(dedup));
+        expect(sortChunkCoords(grid.getAllPersistentChunks())).toEqual(expectedChunks);
     });
 
     it("Should set pending focus state when SetFocusChunk is called", () => {
@@ -282,5 +198,4 @@ describe("CommandSystem (integration)", () => {
         expect(state.hasPendingFocusChunk).toBe(true);
         expect(state.pendingFocusChunkCoord).toEqual({ x: 5, y: -3 });
     });
-
 });

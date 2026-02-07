@@ -1,0 +1,5 @@
+#!/bin/sh
+# Run all tests before commit
+# If tests fail, the commit will be aborted
+
+cd game && npm test

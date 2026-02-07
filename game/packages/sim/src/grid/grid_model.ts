@@ -54,12 +54,13 @@ export class GridModel {
         }
 
         const newChunk = new Chunk(chunkCoord);
+        
+        this.chunks.set(key, newChunk);
 
         if (this.chunkGenerationCallback) {
             this.chunkGenerationCallback(newChunk, chunkCoord);
         }
 
-        this.chunks.set(key, newChunk);
         return newChunk;
     }
 

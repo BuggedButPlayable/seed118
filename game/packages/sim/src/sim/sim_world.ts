@@ -1,11 +1,13 @@
 import { generateNewChunk } from "../core/world_generator";
 import { GridModel } from "../grid/grid_model";
+import { loadSaveGameV1, saveSaveGameV1 } from "../save/save_v1";
 import { StructureStore } from "../state/structure_store";
 import { WorldState } from "../state/world_state";
 import { CommandSystem } from "../systems/command_system";
 import { ChunkCoord } from "../types";
 import { Command } from "../types/commands";
 import { EventType, Event } from "../types/events";
+import { SaveGameV1 } from "../types/save_v1";
 
 /**
  * Represents the simulation world, managing state, grid, and command processing.
@@ -76,6 +78,29 @@ export class SimWorld {
     }
 
     /**
+     * Serializes the current state of the world into a format suitable for saving.
+     * @returns The serialized state of the world.
+     */
+    public saveV1(): SaveGameV1 {
+        return saveSaveGameV1(this.worldState, this.gridModel);
+    }
+
+    /**
+     * Loads the world state from a saved state.
+     * @param save The saved state to load.
+     */
+    public loadV1(save: SaveGameV1): void {
+        const { state: worldState, grid: gridModel } = loadSaveGameV1(save);
+        this.worldState = worldState;
+        this.gridModel = gridModel;
+        this.commandSystem = new CommandSystem();
+        
+        this.gridModel.setChunkGenerationCallback((chunk, chunkCoord) => {
+            generateNewChunk(chunkCoord, this.gridModel, this.worldState);
+        });
+    }
+
+    /**
      * Ensures that all active chunks are generated.
      * @param outEvents The list to which events generated during this process will be added.
      */
@@ -119,7 +144,7 @@ export class SimWorld {
                 const chunkCoord: ChunkCoord = { x: chunkX, y: chunkY };
 
                 if (this.gridModel.hasChunk(chunkCoord)) {
-                continue;
+                    continue;
                 }
 
                 this.gridModel.getOrCreateChunk(chunkCoord);

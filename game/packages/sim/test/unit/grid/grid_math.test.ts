@@ -95,7 +95,6 @@ describe('rotateOffsets', () => {
     });
 
     it('should rotate 270 degrees when rotation is 3', () => {
-        console.log(rotateOffsets(offsets, 3));
         expect(rotateOffsets(offsets, 3)).toEqual([{ x: 0, y: 0 }, { x: 1, y: 0 }]);
     });
 });
