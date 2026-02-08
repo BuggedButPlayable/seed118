@@ -103,11 +103,11 @@ export function loadSaveGameV1(save: SaveGameV1): {state: WorldState; grid: Grid
   state.structureStore = new StructureStore(records);
 
   for (const structure of records) {
-    const defintion = getStructureDefinitionById(structure.definitionId);
-    const tiles = computeFootprintTiles(structure.position, rotateOffsets(defintion.footprint, structure.rotation));
+    const definition = getStructureDefinitionById(structure.definitionId);
+    const tiles = computeFootprintTiles(structure.position, rotateOffsets(definition.footprint, structure.rotation));
 
     for (const tile of tiles) {
-      grid.setResourceIdAt(tile, structure.id);
+      grid.setStructureIdAt(tile, structure.id);
     }
 
     const chunkCoords = dedupeChunkCoords(tiles.map((tile) => tileToChunk(tile)))
