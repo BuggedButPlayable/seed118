@@ -1,19 +1,22 @@
 # S.E.E.D 118 — Game
 
-The game client and simulation, written in TypeScript. It runs in the browser (PixiJS, coming in M1).
+The game client and simulation, written in TypeScript. It runs in the browser (PixiJS + Vite).
 
 ## Structure
 
 ```
 game/
 ├── packages/
-│   └── sim/        deterministic simulation, owns all world state (@seed118/sim)
+│   ├── sim/        deterministic simulation, owns all world state (@seed118/sim)
+│   ├── render/     PixiJS view and camera, read-only (@seed118/render)
+│   └── runtime/    fixed-step game loop, input (@seed118/runtime)
+├── apps/web/       browser entry point (Vite)
 ├── eslint.config.mjs   enforces layer boundaries, determinism and size limits
 └── vitest.config.ts    tests and coverage thresholds
 ```
 
-Planned packages (`render`, `ui`, `runtime`, `apps/web`) are described in
-[`docs/seed118_coding_rules.md`](../docs/seed118_coding_rules.md) §2.
+Layer rules (who may import whom) are in [`docs/seed118_coding_rules.md`](../docs/seed118_coding_rules.md) §2.
+`sim` is type-checked without DOM types; the browser packages each have their own `tsconfig.json` with DOM.
 
 ## Getting started
 
@@ -27,6 +30,8 @@ npm install
 
 | Command                             | What it does                                                                                |
 | ----------------------------------- | ------------------------------------------------------------------------------------------- |
+| `npm run dev`                       | start the game at http://localhost:5173                                                     |
+| `npm run build`                     | production build of the web app into `apps/web/dist`                                        |
 | `npm run check`                     | everything CI checks: format, lint, typecheck, duplication, tests. **Run before every PR.** |
 | `npm test`                          | run all tests once                                                                          |
 | `npm run test:watch`                | tests in watch mode                                                                         |

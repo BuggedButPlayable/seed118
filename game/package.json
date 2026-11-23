@@ -3,20 +3,23 @@
   "private": true,
   "type": "module",
   "workspaces": [
-    "packages/*"
+    "packages/*",
+    "apps/*"
   ],
   "scripts": {
     "test": "vitest --run",
     "test:watch": "vitest",
     "coverage": "vitest run --coverage",
-    "typecheck": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json && tsc -p packages/render && tsc -p packages/runtime && tsc -p apps/web",
     "lint": "eslint . --max-warnings 0",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "check": "npm run format:check && npm run lint && npm run typecheck && npm run dup && npm run test",
     "prepare": "cd .. && husky",
-    "dup": "jscpd packages/*/src --min-tokens 40 --ignore \"**/defs/structure_def/**\" --exit-code 1 --silent && jscpd packages/*/test --min-tokens 70 --exit-code 1 --silent"
+    "dup": "jscpd packages/*/src apps/*/src --min-tokens 40 --ignore \"**/defs/structure_def/**\" --exit-code 1 --silent && jscpd packages/*/test --min-tokens 70 --exit-code 1 --silent",
+    "dev": "npm run dev -w @seed118/web",
+    "build": "npm run build -w @seed118/web"
   },
   "lint-staged": {
     "*.{ts,mjs,js}": [

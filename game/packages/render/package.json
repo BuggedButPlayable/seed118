@@ -1,0 +1,13 @@
+{
+  "name": "@seed118/render",
+  "private": true,
+  "type": "module",
+  "description": "PixiJS view. Reads simulation snapshots and events, never changes world state.",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@seed118/sim": "*",
+    "pixi.js": "^8.23.0"
+  }
+}

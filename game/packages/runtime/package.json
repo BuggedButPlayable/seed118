@@ -1,0 +1,13 @@
+{
+  "name": "@seed118/runtime",
+  "private": true,
+  "type": "module",
+  "description": "Fixed-step game loop, input and platform glue.",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@seed118/render": "*",
+    "@seed118/sim": "*"
+  }
+}

@@ -27,10 +27,15 @@ const layerRules = Object.keys(ALLOWED_DEPENDENCIES).map((pkg) => ({
             'error',
             {
                 patterns: [
-                    {
-                        group: forbiddenPackagesFor(pkg),
-                        message: `Layer "${pkg}" may only import: ${ALLOWED_DEPENDENCIES[pkg].join(', ') || 'nothing'} (architecture §3).`,
-                    },
+                    // A layer that may import every other package has no forbidden group (ESLint rejects empty ones)
+                    ...(forbiddenPackagesFor(pkg).length === 0
+                        ? []
+                        : [
+                              {
+                                  group: forbiddenPackagesFor(pkg),
+                                  message: `Layer "${pkg}" may only import: ${ALLOWED_DEPENDENCIES[pkg].join(', ') || 'nothing'} (architecture §3).`,
+                              },
+                          ]),
                     {
                         group: ['@seed118/*/*'],
                         message:

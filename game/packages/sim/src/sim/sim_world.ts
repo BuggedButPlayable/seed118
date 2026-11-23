@@ -1,6 +1,6 @@
 import { createWorldGrid } from '../core/world_generator';
 import { isSameCoord } from '../grid/grid_math';
-import { byId } from '../core/ordering';
+import { byCoord, byId } from '../core/ordering';
 import { parseSave } from '../save/parse_save';
 import { loadSaveV2, writeSaveV2 } from '../save/save_v2';
 import type { SaveGameV2 } from '../save/save_v2';
@@ -137,6 +137,11 @@ export class SimWorld {
      */
     public checkPlacement(request: PlacementRequest): PlacementRejection | null {
         return checkPlacement(this.gridModel, request);
+    }
+
+    /** Every chunk generated so far (with its resources), row by row. */
+    public getChunkCoords(): ChunkCoord[] {
+        return this.gridModel.getAllChunkCoords().sort(byCoord);
     }
 
     public getStructureIdAt(tile: TileCoord): number {
