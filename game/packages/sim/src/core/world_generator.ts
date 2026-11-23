@@ -2,7 +2,7 @@
  * World generation functions for creating and populating chunks in the game world.
  */
 
-import type { GridModel } from '../grid/grid_model';
+import { GridModel } from '../grid/grid_model';
 import type { WorldState } from '../state/world_state';
 import type { ChunkCoord } from '../types';
 import { EventType } from '../types/events';
@@ -44,4 +44,17 @@ export function generateNewChunk(chunkCoord: ChunkCoord, grid: GridModel, state:
             coord: chunkCoord,
         });
     }
+}
+
+/**
+ * Creates an empty grid that fills every new chunk with resources from `state`'s seed.
+ * Use it for every grid, including one rebuilt from a save: chunks created while restoring structures
+ * must get their resources too.
+ */
+export function createWorldGrid(state: WorldState): GridModel {
+    const grid = new GridModel();
+    grid.setChunkGenerationCallback((_chunk, chunkCoord) => {
+        generateNewChunk(chunkCoord, grid, state);
+    });
+    return grid;
 }

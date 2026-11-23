@@ -1,16 +1,10 @@
 /**
- * Rudimentary save/load system for the game. This is a very basic implementation and is not optimized for performance or storage efficiency.
- * It serves as a starting point for implementing a more robust save/load system in the future.
+ * Save format v1 (M0): structures and persistent chunks only. Kept so old saves can still be loaded:
+ * `parseSave` migrates them to the current version. Nothing writes v1 any more.
  */
 
-import { byCoord, byId } from '../core/ordering';
-import { getStructureDefinitionById, getStructureDefinitionByKey } from '../defs/structure_registry';
-import { computePlacedFootprint, dedupeChunkCoords, tileToChunk } from '../grid/grid_math';
-import { GridModel } from '../grid/grid_model';
-import { StructureStore } from '../state/structure_store';
-import { WorldState } from '../state/world_state';
 import type { ChunkCoord, Rotation, TileCoord } from '../types';
-import type { StructureRecord } from '../types/structure';
+import type { SaveGameV2 } from './save_v2';
 
 export const SAVE_V1_VERSION = 1 as const;
 
@@ -18,101 +12,27 @@ export type SaveStructureV1 = {
     id: number;
     definition_key: string;
     coord: TileCoord;
-    rotation: number;
+    rotation: Rotation;
     tick?: number;
 };
 
-export type SaveGameV1 = {
-    version: 1;
+/** Fields every save version shares. */
+export type SaveBase = {
     world_seed: number;
     tick_index: number;
-
     structures: SaveStructureV1[];
     persistent_chunks: ChunkCoord[];
 };
 
-/**
- * Saves the current game state into the SaveGameV1 format.
- * @param state The current world state.
- * @param grid The current grid model.
- * @returns The saved game data in SaveGameV1 format.
- */
-export function saveSaveGameV1(state: WorldState, grid: GridModel): SaveGameV1 {
-    const structures: SaveStructureV1[] = state.structureStore
-        .getAllStructures()
-        .slice()
-        .sort(byId)
-        .map((structure) => ({
-            id: structure.id,
-            definition_key: getStructureDefinitionById(structure.definitionId).key,
-            coord: structure.position,
-            rotation: structure.rotation,
-            tick: structure.tick,
-        }));
+export type SaveGameV1 = SaveBase & { version: typeof SAVE_V1_VERSION };
 
-    const persistentChunks: ChunkCoord[] = grid
-        .getAllPersistentChunks()
-        .slice()
-        .sort(byCoord)
-        .map((coord) => ({ x: coord.x, y: coord.y }));
-
+/** v1 → v2: v1 worlds had no items, no extraction progress and no deliveries. */
+export function migrateV1ToV2(save: SaveGameV1): SaveGameV2 {
     return {
-        version: SAVE_V1_VERSION,
-        world_seed: state.worldSeed,
-        tick_index: state.tickIndex,
-        structures,
-        persistent_chunks: persistentChunks,
+        ...save,
+        version: 2,
+        item_slots: [],
+        extraction_progress: [],
+        delivered: [],
     };
-}
-
-/**
- * Loads the game state from the given SaveGameV1 data.
- * @param save The saved game data in SaveGameV1 format.
- * @returns An object containing the loaded world state and grid model.
- */
-export function loadSaveGameV1(save: SaveGameV1): { state: WorldState; grid: GridModel } {
-    const state = new WorldState();
-    state.worldSeed = save.world_seed;
-    state.tickIndex = save.tick_index;
-
-    const grid = new GridModel();
-
-    const persistentChunkCoords = save.persistent_chunks.map((coord) => ({ x: coord.x, y: coord.y }));
-    grid.setChunkPersistent(persistentChunkCoords, true);
-
-    const records: StructureRecord[] = [];
-    for (const structure of save.structures) {
-        if (!Number.isFinite(structure.id) || structure.id <= 0) {
-            continue;
-        }
-        if (!structure.definition_key || typeof structure.definition_key !== 'string') {
-            continue;
-        }
-
-        const definition = getStructureDefinitionByKey(structure.definition_key);
-        records.push({
-            id: structure.id,
-            definitionId: definition.id,
-            position: { x: structure.coord.x, y: structure.coord.y },
-            rotation: structure.rotation as Rotation,
-            tick: structure.tick ?? 0,
-        });
-    }
-
-    records.sort(byId);
-    state.structureStore = new StructureStore(records);
-
-    for (const structure of records) {
-        const definition = getStructureDefinitionById(structure.definitionId);
-        const tiles = computePlacedFootprint(structure.position, structure.rotation, definition.footprint);
-
-        for (const tile of tiles) {
-            grid.setStructureIdAt(tile, structure.id);
-        }
-
-        const chunkCoords = dedupeChunkCoords(tiles.map((tile) => tileToChunk(tile)));
-        grid.setChunkPersistent(chunkCoords, true);
-    }
-
-    return { state, grid };
 }

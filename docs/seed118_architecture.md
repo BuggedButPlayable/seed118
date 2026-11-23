@@ -182,20 +182,31 @@ A persistent chunk is a chunk that must be saved because build mutations occurre
 - Multi-tile mutations must mark all affected chunk coordinates persistent.
 - Persistent chunk state is included in save files.
 
-## 10. Save / Load (v1)
+## 10. Save / Load (v2)
 
 Save files include only state that cannot be reconstructed deterministically:
 - Version
 - World seed
-- Tick index (optional but supported)
+- Tick index
 - Entities: id, type, anchor position, rotation
 - Persistent chunk coordinates
+- Items held by structures (`item_slots`: structure id, item key, ticks remaining)
+- Collector progress (`extraction_progress`)
+- Delivered counts per item (`delivered`)
+
+All lists are sorted (by id or coordinate), so equal worlds give equal saves.
 
 Load rules:
-- World is reset from seed.
+- Untrusted data goes through `parseSave(data: unknown)`: it validates every field and migrates older versions
+  step by step (v1 → v2: no items, no progress, no deliveries). A malformed save throws and leaves the current
+  world unchanged.
+- World is reset from seed. The grid is created with its chunk generator already bound (`createWorldGrid`),
+  so chunks created while restoring structures get their resources.
 - Persistent chunks are restored first.
 - Entities are restored next.
 - Occupancy is rebuilt from entity data using footprints and rotation.
+- Item slots, progress and delivered counts are restored last.
+- Guarded by tests: `save → load → save` is identical, and a reloaded world continues exactly like the original.
 
 ## 11. Public Simulation API Freeze
 
@@ -204,7 +215,7 @@ Gameplay/UI/View may only rely on what `packages/sim/src/index.ts` exports, in p
 - `SimWorld.tick(commands, outEvents)`
 - World setup: `SimWorld.startNewWorld(seed)`
 - Snapshot getters and queries on `SimWorld` (`getStructures`, `getStructureIdAt`, `getResourceIdAt`, `getItemSlots`, `getDeliveredCount`, `checkPlacement`, `getTickIndex`, `getWorldSeed`)
-- Save/Load entry points (`saveV1`, `loadV1`)
+- Save/Load entry points (`saveV2`, `loadSave`)
 - Definitions and shared geometry (registries, `rotateOffsets`, `computeFootprintTiles`, `computePlacedFootprint`, `computeWorldPorts`, `rotateSide`, `oppositeSide`, `neighbourAcross`)
 
 Anything else is internal and must not be called across layers.
