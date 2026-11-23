@@ -13,9 +13,18 @@ export {
     getStructureDefinitionByKey,
 } from './defs/structure_registry';
 export { RESOURCE_DEFINITIONS, getResourceDefinitionById } from './defs/resource_registry';
+export { ITEM_DEFINITIONS, getItemDefinitionById, getItemDefinitionByKey } from './defs/item_registry';
 
 // Shared geometry: preview and simulation must use the same footprint rules (architecture §8)
-export { computeFootprintTiles, rotateOffsets, tileToChunk } from './grid/grid_math';
+export {
+    computeFootprintTiles,
+    computeWorldPorts,
+    neighbourAcross,
+    oppositeSide,
+    rotateOffsets,
+    rotateSide,
+    tileToChunk,
+} from './grid/grid_math';
 
 export { CommandType } from './types/commands';
 export type { Command } from './types/commands';
@@ -28,9 +37,12 @@ export type {
     Side,
     StructureDefinition,
     StructureKey,
+    ExtractionSpec,
     StructurePort,
     StructureRecord,
+    TransportSpec,
 } from './types/structure';
 export type { ResourceDefinition } from './types/resource';
+export type { ItemDefinition, ItemKey, ItemSlotSnapshot } from './types/item';
 export { SAVE_V1_VERSION } from './save/save_v1';
 export type { SaveGameV1, SaveStructureV1 } from './save/save_v1';

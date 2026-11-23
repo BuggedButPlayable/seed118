@@ -1,14 +1,18 @@
 import { STRUCTURE_ID_NONE } from '../core/constants';
 import { getStructureDefinitionById } from '../defs/structure_registry';
 import type { GridModel } from '../grid/grid_model';
-import { computeFootprintTiles, dedupeChunkCoords, rotateOffsets, tileToChunk } from '../grid/grid_math';
+import {
+    SIDE_COUNT,
+    computeFootprintTiles,
+    dedupeChunkCoords,
+    rotateOffsets,
+    tileToChunk,
+} from '../grid/grid_math';
 import type { WorldState } from '../state/world_state';
 import { CommandType } from '../types/commands';
 import type { Command } from '../types/commands';
 import { EventType, RejectReason } from '../types/events';
 import type { Event } from '../types/events';
-
-const QUARTER_TURNS_PER_REVOLUTION = 4;
 
 type PlaceStructureCommand = Extract<Command, { type: CommandType.PlaceStructure }>;
 type RemoveStructureCommand = Extract<Command, { type: CommandType.RemoveStructure }>;
@@ -129,7 +133,7 @@ export class CommandSystem {
                 grid.setStructureIdAt(tile, STRUCTURE_ID_NONE);
             }
         }
-        state.structureStore.removeStructure(structureId);
+        state.forgetStructure(structureId);
 
         outEvents.push({
             type: EventType.StructureRemoved,
@@ -147,5 +151,5 @@ function rejected(command: Command, reason: RejectReason, details: string): Even
 }
 
 function isValidRotation(rotation: number): boolean {
-    return Number.isInteger(rotation) && rotation >= 0 && rotation < QUARTER_TURNS_PER_REVOLUTION;
+    return Number.isInteger(rotation) && rotation >= 0 && rotation < SIDE_COUNT;
 }

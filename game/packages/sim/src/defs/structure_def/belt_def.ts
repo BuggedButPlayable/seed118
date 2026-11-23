@@ -1,5 +1,8 @@
 import type { StructureDefinition } from '../../types/structure';
 
+/** Placeholder balancing (M1): 10 ticks per tile = 2 tiles per second at 20 ticks per second. */
+const BELT_TRANSIT_TICKS = 10;
+
 export const BELT_DEFINITION: StructureDefinition = {
     id: 2,
     key: 'belt',
@@ -11,4 +14,5 @@ export const BELT_DEFINITION: StructureDefinition = {
     deletable: true,
     placeable: true,
     rotatable: true,
+    transport: { transitTicks: BELT_TRANSIT_TICKS },
 };

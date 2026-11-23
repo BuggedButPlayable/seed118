@@ -3,6 +3,7 @@ import type { ResourceDefinition } from '../../types/resource';
 export const HYDROGEN_DEFINITION: ResourceDefinition = Object.freeze({
     id: 1,
     key: 'hydrogen',
+    itemKey: 'hydrogen',
     cellSizeTiles: 8,
     spawnProb: 0.1,
     radiusMin: 2,
