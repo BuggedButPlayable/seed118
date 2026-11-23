@@ -2,11 +2,11 @@
  * Defines event types and structures for simulation events in the game.
  */
 
-import { Command } from "./commands";
-import { ChunkCoord, Rotation, TileCoord } from "./coords";
-import { StructureKey } from "./structure";
+import type { Command } from './commands';
+import type { ChunkCoord, Rotation, TileCoord } from './coords';
+import type { StructureKey } from './structure';
 
-/** 
+/**
  * Reasons why a command might be rejected
  */
 export enum RejectReason {
@@ -14,7 +14,6 @@ export enum RejectReason {
     InvalidPayload,
     Occupied,
     Empty,
-    InvalidType,
     NotRemovable,
     NotPlaceable,
 }
@@ -38,40 +37,40 @@ export enum EventType {
  */
 export type Event =
     | {
-        type: EventType.CommandRejected;
-        reason: RejectReason;
-        rejectedCommand: Command;
-        details: string;
-    }
+          type: EventType.CommandRejected;
+          reason: RejectReason;
+          rejectedCommand: Command;
+          details: string;
+      }
     | {
-        type: EventType.WorldLoaded;
-    }
+          type: EventType.WorldLoaded;
+      }
     | {
-        type: EventType.TickAdvanced;
-        tickIndex: number;
-    }
+          type: EventType.TickAdvanced;
+          tickIndex: number;
+      }
     | {
-        type: EventType.Delivered;
-    }
+          type: EventType.Delivered;
+      }
     | {
-        type: EventType.StructureRemoved;
-        structureId: number;
-        structureKey: StructureKey;
-        structureCoord: TileCoord;
-        structureRotation: Rotation;
-    }
+          type: EventType.StructureRemoved;
+          structureId: number;
+          structureKey: StructureKey;
+          structureCoord: TileCoord;
+          structureRotation: Rotation;
+      }
     | {
-        type: EventType.StructurePlaced;
-        structureId: number;
-        structureKey: StructureKey;
-        structureCoord: TileCoord;
-        structureRotation: Rotation;
-    }
+          type: EventType.StructurePlaced;
+          structureId: number;
+          structureKey: StructureKey;
+          structureCoord: TileCoord;
+          structureRotation: Rotation;
+      }
     | {
-        type: EventType.FocusChunkUpdated;
-        chunkCoord: ChunkCoord
-    }
+          type: EventType.FocusChunkUpdated;
+          chunkCoord: ChunkCoord;
+      }
     | {
-        type: EventType.ChunkGenerated;
-        coord: ChunkCoord;
-    }
+          type: EventType.ChunkGenerated;
+          coord: ChunkCoord;
+      };

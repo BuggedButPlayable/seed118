@@ -1,7 +1,14 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { Chunk } from '../../../src/grid/chunk';
 import { CHUNK_SIZE, RESOURCE_ID_NONE, STRUCTURE_ID_NONE } from '../../../src/core/constants';
-import { ChunkCoord, TileCoord } from '../../../src/types/coords';
+import type { ChunkCoord, TileCoord } from '../../../src/types/coords';
+
+const CHUNK_CORNERS: readonly TileCoord[] = [
+    { x: 0, y: 0 },
+    { x: CHUNK_SIZE - 1, y: 0 },
+    { x: 0, y: CHUNK_SIZE - 1 },
+    { x: CHUNK_SIZE - 1, y: CHUNK_SIZE - 1 },
+];
 
 describe('Chunk', () => {
     let chunk: Chunk;
@@ -47,14 +54,7 @@ describe('Chunk', () => {
         });
 
         it('should handle corner coordinates', () => {
-            const corners: TileCoord[] = [
-                { x: 0, y: 0 },
-                { x: CHUNK_SIZE - 1, y: 0 },
-                { x: 0, y: CHUNK_SIZE - 1 },
-                { x: CHUNK_SIZE - 1, y: CHUNK_SIZE - 1 }
-            ];
-
-            corners.forEach((coord, index) => {
+            CHUNK_CORNERS.forEach((coord, index) => {
                 const structureId = 100 + index;
                 chunk.setStructureAt(coord, structureId);
                 expect(chunk.getStructureAt(coord)).toBe(structureId);
@@ -72,40 +72,11 @@ describe('Chunk', () => {
         });
 
         it('should handle corner coordinates', () => {
-            const corners: TileCoord[] = [
-                { x: 0, y: 0 },
-                { x: CHUNK_SIZE - 1, y: 0 },
-                { x: 0, y: CHUNK_SIZE - 1 },
-                { x: CHUNK_SIZE - 1, y: CHUNK_SIZE - 1 }
-            ];
-
-            corners.forEach((coord, index) => {
+            CHUNK_CORNERS.forEach((coord, index) => {
                 const resourceId = 200 + index;
                 chunk.setResourceAt(coord, resourceId);
                 expect(chunk.getResourceAt(coord)).toBe(resourceId);
             });
-        });
-    });
-
-    describe('getStructureId', () => {
-        it('should return the same value as getStructureAt', () => {
-            const tileCoord: TileCoord = { x: 4, y: 6 };
-            const structureId = 55;
-
-            chunk.setStructureAt(tileCoord, structureId);
-            expect(chunk.getStructureId(tileCoord)).toBe(chunk.getStructureAt(tileCoord));
-            expect(chunk.getStructureId(tileCoord)).toBe(structureId);
-        });
-    });
-
-    describe('getResourceId', () => {
-        it('should return the same value as getResourceAt', () => {
-            const tileCoord: TileCoord = { x: 8, y: 1 };
-            const resourceId = 77;
-
-            chunk.setResourceAt(tileCoord, resourceId);
-            expect(chunk.getResourceId(tileCoord)).toBe(chunk.getResourceAt(tileCoord));
-            expect(chunk.getResourceId(tileCoord)).toBe(resourceId);
         });
     });
 

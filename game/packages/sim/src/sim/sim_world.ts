@@ -1,168 +1,129 @@
-import { generateNewChunk } from "../core/world_generator";
-import { GridModel } from "../grid/grid_model";
-import { loadSaveGameV1, saveSaveGameV1 } from "../save/save_v1";
-import { StructureStore } from "../state/structure_store";
-import { WorldState } from "../state/world_state";
-import { CommandSystem } from "../systems/command_system";
-import { ChunkCoord } from "../types";
-import { Command } from "../types/commands";
-import { EventType, Event } from "../types/events";
-import { SaveGameV1 } from "../types/save_v1";
+import { generateNewChunk } from '../core/world_generator';
+import { GridModel } from '../grid/grid_model';
+import { isSameCoord } from '../grid/grid_math';
+import { byId } from '../core/ordering';
+import { loadSaveGameV1, saveSaveGameV1 } from '../save/save_v1';
+import { WorldState } from '../state/world_state';
+import { CommandSystem } from '../systems/command_system';
+import type { ChunkCoord, TileCoord } from '../types';
+import type { Command } from '../types/commands';
+import { EventType } from '../types/events';
+import type { Event } from '../types/events';
+import type { SaveGameV1 } from '../types/save_v1';
+import type { StructureRecord } from '../types/structure';
 
 /**
- * Represents the simulation world, managing state, grid, and command processing.
+ * Public entry point of the simulation. Owns all world state and advances it in fixed ticks.
+ * Everything outside the sim package talks to the world only through this class.
  */
 export class SimWorld {
-
+    private worldState = new WorldState();
     private gridModel: GridModel;
-    private commandSystem: CommandSystem;
-    private worldState: WorldState;
+    private readonly commandSystem = new CommandSystem();
 
     constructor() {
-        this.worldState = new WorldState();
-        this.gridModel = new GridModel();
-        this.commandSystem = new CommandSystem();
-
-        this.gridModel.setChunkGenerationCallback((chunk, chunkCoord) => {
-            generateNewChunk(chunkCoord, this.gridModel, this.worldState);
-        });
-        
-        this.reset(this.worldState.worldSeed);
+        this.gridModel = this.createGrid();
     }
 
     /**
      * Advances the simulation by one tick.
-     * @param commands The list of commands to process during this tick.
-     * @param outEvents The list to which events generated during this tick will be added.
+     * @param commands Commands to apply this tick, in enqueue order.
+     * @param outEvents Receives every event produced during this tick.
      */
-    public tick(commands: Command[], outEvents: Event[]): void {
-        let currentTickOutEvents = outEvents;
+    public tick(commands: readonly Command[], outEvents: Event[]): void {
+        this.worldState.currentTickOutEvents = outEvents;
+        this.worldState.pendingFocusChunkCoord = null;
 
-        this.worldState.hasPendingFocusChunk = false;
-
-        for (const command of commands) {
-            this.commandSystem.tick(this.worldState, this.gridModel, [command], currentTickOutEvents);
-        }
-
-        this._applyPendingFocusChange(outEvents);
-        this._ensureActiveChunksGenerated(outEvents);
-        this._simulate(outEvents);
+        this.commandSystem.tick(this.worldState, this.gridModel, commands, outEvents);
+        this.applyPendingFocusChange(outEvents);
+        this.ensureActiveChunksGenerated();
 
         this.worldState.tickIndex += 1;
+        outEvents.push({ type: EventType.TickAdvanced, tickIndex: this.worldState.tickIndex });
 
-        outEvents.push({
-            type: EventType.TickAdvanced,
-            tickIndex: this.worldState.tickIndex,
-        });
-
-        currentTickOutEvents = [];
+        this.worldState.currentTickOutEvents = null;
     }
 
-    /** 
-     * Resets the simulation world to its initial state with the given seed.
-     * @param wordSeed The seed to use for world generation.
-     */
-    public reset(wordSeed: number) {
-        this.worldState.tickIndex = 0;
-        this.worldState.worldSeed = wordSeed;
-        this.worldState.generatedChunkCount = 0;
-
-        this.worldState.hasFocusChunk = false;
-        this.worldState.focusChunkCoord = null;
-
-        this.gridModel = new GridModel();
-        this.worldState.structureStore = new StructureStore();
-        this.gridModel.setChunkGenerationCallback((chunk, chunkCoord) => {
-            generateNewChunk(chunkCoord, this.gridModel, this.worldState);
-        });
+    /** Resets the world to an empty state generated from the given seed. */
+    public reset(worldSeed: number): void {
+        this.worldState = new WorldState();
+        this.worldState.worldSeed = worldSeed;
+        this.gridModel = this.createGrid();
     }
 
-    /**
-     * Serializes the current state of the world into a format suitable for saving.
-     * @returns The serialized state of the world.
-     */
+    /** Serializes everything that cannot be regenerated from the seed. */
     public saveV1(): SaveGameV1 {
         return saveSaveGameV1(this.worldState, this.gridModel);
     }
 
-    /**
-     * Loads the world state from a saved state.
-     * @param save The saved state to load.
-     */
+    /** Replaces the current world with a saved one. */
     public loadV1(save: SaveGameV1): void {
-        const { state: worldState, grid: gridModel } = loadSaveGameV1(save);
-        this.worldState = worldState;
-        this.gridModel = gridModel;
-        this.commandSystem = new CommandSystem();
-        
-        this.gridModel.setChunkGenerationCallback((chunk, chunkCoord) => {
-            generateNewChunk(chunkCoord, this.gridModel, this.worldState);
+        const { state, grid } = loadSaveGameV1(save);
+        this.worldState = state;
+        this.gridModel = grid;
+        this.attachChunkGenerator(this.gridModel);
+    }
+
+    // Snapshot getters (read-only access for view and tests, architecture §11)
+
+    public getWorldSeed(): number {
+        return this.worldState.worldSeed;
+    }
+
+    public getTickIndex(): number {
+        return this.worldState.tickIndex;
+    }
+
+    /** All structures, sorted by id. */
+    public getStructures(): readonly Readonly<StructureRecord>[] {
+        return this.worldState.structureStore.getAllStructures().sort(byId);
+    }
+
+    public getStructureIdAt(tile: TileCoord): number {
+        return this.gridModel.getStructureIdAt(tile);
+    }
+
+    public getResourceIdAt(tile: TileCoord): number {
+        return this.gridModel.getResourceIdAt(tile);
+    }
+
+    private createGrid(): GridModel {
+        const grid = new GridModel();
+        this.attachChunkGenerator(grid);
+        return grid;
+    }
+
+    private attachChunkGenerator(grid: GridModel): void {
+        grid.setChunkGenerationCallback((_chunk, chunkCoord) => {
+            generateNewChunk(chunkCoord, grid, this.worldState);
         });
     }
 
-    /**
-     * Ensures that all active chunks are generated.
-     * @param outEvents The list to which events generated during this process will be added.
-     */
-    private _applyPendingFocusChange(outEvents: Event[]): void {
-        if (!this.worldState.hasPendingFocusChunk)
+    private applyPendingFocusChange(outEvents: Event[]): void {
+        const next = this.worldState.pendingFocusChunkCoord;
+        const current = this.worldState.focusChunkCoord;
+
+        if (next === null || (current !== null && isSameCoord(next, current))) {
             return;
+        }
 
-        var newFocusChunkCoord = this.worldState.pendingFocusChunkCoord;
-
-        if (this.worldState.hasFocusChunk && newFocusChunkCoord == this.worldState.focusChunkCoord)
-            return
-
-        this.worldState.focusChunkCoord = newFocusChunkCoord;
-        this.worldState.hasFocusChunk = true;
-        outEvents.push({
-            type: EventType.FocusChunkUpdated,
-            chunkCoord: this.worldState.focusChunkCoord!,
-        });
+        this.worldState.focusChunkCoord = next;
+        outEvents.push({ type: EventType.FocusChunkUpdated, chunkCoord: next });
     }
 
-    /**
-     * Ensures that all chunks within the active radius of the focus chunk are generated.
-     * @param outEvents The list to which events generated during this process will be added.
-     */
-    private _ensureActiveChunksGenerated(outEvents: Event[]): void {
-        if (!this.worldState.hasFocusChunk)
+    /** Generates every chunk within the active radius around the focus chunk. */
+    private ensureActiveChunksGenerated(): void {
+        const focus = this.worldState.focusChunkCoord;
+        if (focus === null) {
             return;
+        }
 
-        const minChunk: ChunkCoord = {
-            x: this.worldState.focusChunkCoord!.x - this.worldState.activeRadiusChunks,
-            y: this.worldState.focusChunkCoord!.y - this.worldState.activeRadiusChunks,
-        };
-
-        const maxChunk: ChunkCoord = {
-            x: this.worldState.focusChunkCoord!.x + this.worldState.activeRadiusChunks,
-            y: this.worldState.focusChunkCoord!.y + this.worldState.activeRadiusChunks,
-        };
-
-        for (let chunkY = minChunk.y; chunkY <= maxChunk.y; chunkY++) {
-            for (let chunkX = minChunk.x; chunkX <= maxChunk.x; chunkX++) {
-                const chunkCoord: ChunkCoord = { x: chunkX, y: chunkY };
-
-                if (this.gridModel.hasChunk(chunkCoord)) {
-                    continue;
-                }
-
+        const radius = this.worldState.activeRadiusChunks;
+        for (let y = focus.y - radius; y <= focus.y + radius; y++) {
+            for (let x = focus.x - radius; x <= focus.x + radius; x++) {
+                const chunkCoord: ChunkCoord = { x, y };
                 this.gridModel.getOrCreateChunk(chunkCoord);
             }
         }
-    }
-
-    /** 
-     * Simulates the behavior of all structures in the world for the current tick.
-     * @param outEvents The list to which events generated during this process will be added.
-     */
-    private _simulate(outEvents: Event[]): void {
-        var structureIds = this.worldState.structureStore.getAllStructures();
-        structureIds.sort((a, b) => a.id - b.id);
-
-        // Simulate each structure
-        // CollectorSystem.tick(self, ids, out_events)
-        // TransportSystem.tick(self, ids, out_events)
-        // CoreSystem.tick(self, ids, out_events)
     }
 }

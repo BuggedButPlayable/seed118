@@ -1,102 +1,45 @@
 # S.E.E.D 118 — Game
 
-This directory contains the game itself.
+The game client and simulation, written in TypeScript. It runs in the browser (PixiJS, coming in M1).
 
-The game is built to run directly in the browser using PixiJS.
-
-## Project Structure
+## Structure
 
 ```
 game/
 ├── packages/
-│   ├── sim/          # Core simulation logic (deterministic, state-owning)
-│   ├── render/       # PixiJS rendering layer (read-only view)
-│   ├── runtime/      # Game loop, input, platform abstraction
-│   └── ui/           # UI components and HUD
-├── apps/
-│   └── web/          # Browser application entry point
-├── assets/           # Sprites, audio, fonts
-├── tools/            # Build scripts, dev utilities
-└── coverage/         # Test coverage reports
+│   └── sim/        deterministic simulation, owns all world state (@seed118/sim)
+├── eslint.config.mjs   enforces layer boundaries, determinism and size limits
+└── vitest.config.ts    tests and coverage thresholds
 ```
 
-## Getting Started
+Planned packages (`render`, `ui`, `runtime`, `apps/web`) are described in
+[`docs/seed118_coding_rules.md`](../docs/seed118_coding_rules.md) §2.
 
-### Prerequisites
+## Getting started
 
-- Node.js 18+ and npm
-
-### Installation
+Requires Node.js 24+.
 
 ```bash
 npm install
 ```
 
-This will also set up git hooks automatically (via husky).
+## Commands
 
-## Development
+| Command                             | What it does                                                                                |
+| ----------------------------------- | ------------------------------------------------------------------------------------------- |
+| `npm run check`                     | everything CI checks: format, lint, typecheck, duplication, tests. **Run before every PR.** |
+| `npm test`                          | run all tests once                                                                          |
+| `npm run test:watch`                | tests in watch mode                                                                         |
+| `npm run coverage`                  | tests with coverage report (`coverage/index.html`) and thresholds                           |
+| `npm run lint` / `npm run lint:fix` | ESLint                                                                                      |
+| `npm run format`                    | format everything with Prettier                                                             |
+| `npm run dup`                       | fails on copy-pasted code (jscpd)                                                           |
+| `npm run typecheck`                 | TypeScript, no emit                                                                         |
 
-### Pre-commit Hook
+Git hooks (in the repo root `.husky/`) run lint-staged, typecheck and tests before each commit and check
+the commit message format.
 
-A **pre-commit hook** automatically runs all tests before each commit. If any test fails, the commit will be aborted.
+## Rules
 
-```
-
-### Running Tests
-
-```bash
-# Run all tests once
-npm test
-
-# Run with coverage report
-npm run coverage
-```
-
-### Test Coverage
-
-Coverage reports are generated in `coverage/` and include:
-- Line coverage
-- Branch coverage
-- Function coverage
-- HTML report at `coverage/lcov-report/index.html`
-
-### Writing Tests
-
-The project uses **Vitest** for testing.
-
-**Unit tests** are located in `packages/*/test/unit/`  
-**Integration tests** are in `packages/*/test/integration/`
-
-## Packages
-
-### `packages/sim`
-
-Core simulation package containing:
-- World state management
-- Command system
-- Grid and chunk logic
-- Structure and resource definitions
-- Deterministic world generation
-
-### `packages/render`
-
-PixiJS rendering layer:
-- Sprite management
-- Tilemap rendering
-- Camera system
-- Visual effects
-
-### `packages/runtime`
-
-Game loop and platform:
-- Fixed-step simulation loop
-- Input handling
-- Browser platform adapter
-
-### `packages/ui`
-
-User interface:
-- HUD components
-- Menus
-- Tool panels
-- State bindings (read-only)
+How to write code for this project is defined in [`docs/seed118_coding_rules.md`](../docs/seed118_coding_rules.md),
+the system guarantees in [`docs/seed118_architecture.md`](../docs/seed118_architecture.md).

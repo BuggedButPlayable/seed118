@@ -1,5 +1,6 @@
 #!/bin/sh
-# Run all tests before commit
-# If tests fail, the commit will be aborted
-
-cd game && npm test
+# Enforced quality gate (see docs/seed118_coding_rules.md). Never bypass with --no-verify.
+cd game || exit 1
+npx lint-staged || exit 1
+npm run typecheck || exit 1
+npm test

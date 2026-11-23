@@ -1,25 +1,29 @@
-import { ChunkCoord, Rotation, TileCoord } from "../types";
-import { Command, CommandType } from "../types/commands";
-import { Event, EventType, RejectReason } from "../types/events";
-import { WorldState } from "../state/world_state";
-import { GridModel } from "../grid/grid_model";
-import { STRUCTURE_ID_NONE } from "../core/constants";
-import { computeFootprintTiles, rotateOffsets, tileToChunk } from "../grid/grid_math";
-import { getStructureDefinitionById } from "../defs/structure_registry";
-import { StructureRecord } from "../types/structure";
-import { dedupeChunkCoords } from "../save/utils.";
+import { STRUCTURE_ID_NONE } from '../core/constants';
+import { getStructureDefinitionById } from '../defs/structure_registry';
+import type { GridModel } from '../grid/grid_model';
+import { computeFootprintTiles, dedupeChunkCoords, rotateOffsets, tileToChunk } from '../grid/grid_math';
+import type { WorldState } from '../state/world_state';
+import { CommandType } from '../types/commands';
+import type { Command } from '../types/commands';
+import { EventType, RejectReason } from '../types/events';
+import type { Event } from '../types/events';
+
+const QUARTER_TURNS_PER_REVOLUTION = 4;
+
+type PlaceStructureCommand = Extract<Command, { type: CommandType.PlaceStructure }>;
+type RemoveStructureCommand = Extract<Command, { type: CommandType.RemoveStructure }>;
 
 /**
- * The CommandSystem processes player commands and updates the world state and grid model accordingly.
+ * Applies player commands to the world state and grid.
+ * Invalid commands never throw: they emit a CommandRejected event (architecture §6).
  */
 export class CommandSystem {
-
     /**
-     * Processes a list of commands for the current tick.
-     * @param state The current world state.
-     * @param grid The grid model representing the world.
-     * @param commands The list of commands to process.
-     * @param outEvents The array to which events will be pushed.
+     * Applies commands in the given order (FIFO, architecture §2).
+     * @param state The world state to mutate.
+     * @param grid The grid to mutate.
+     * @param commands The commands of this tick.
+     * @param outEvents Receives all resulting events.
      */
     public tick(state: WorldState, grid: GridModel, commands: readonly Command[], outEvents: Event[]): void {
         for (const command of commands) {
@@ -28,183 +32,120 @@ export class CommandSystem {
     }
 
     /**
-     * Applies a command to the world state and grid model.
-     * @param state The current world state.
-     * @param grid The grid model representing the world.
+     * Applies a single command.
+     * @param state The world state to mutate.
+     * @param grid The grid to mutate.
      * @param command The command to apply.
-     * @param outEvents The array to which events will be pushed.
+     * @param outEvents Receives all resulting events.
      */
     public applyCommand(state: WorldState, grid: GridModel, command: Command, outEvents: Event[]): void {
         switch (command.type) {
             case CommandType.PlaceStructure:
-                this._placeStructure(state, grid, command, outEvents);
-                break;
+                this.placeStructure(state, grid, command, outEvents);
+                return;
             case CommandType.RemoveStructure:
-                this._removeStructure(state, grid, command, outEvents);
-                break;
+                this.removeStructure(state, grid, command, outEvents);
+                return;
             case CommandType.SetFocusChunk:
-                this._setFocusChunk(state, command.coord);
-                break;
-            default:
-                this._emitCommandRejected(
-                    command, 
-                    RejectReason.UnknownCommand, 
-                    "", 
-                    outEvents);
+                state.pendingFocusChunkCoord = command.coord;
+                return;
         }
+        // Unreachable for well-typed callers, but commands may come from untyped sources at runtime.
+        outEvents.push(rejected(command, RejectReason.UnknownCommand, 'Unknown command type.'));
     }
 
-    /**
-     * Places a structure at the specified tile coordinate.
-     * @param state The current world state.
-     * @param grid The grid model representing the world.
-     * @param command The command containing the placement details.
-     * @param outEvents The array to which events will be pushed.
-     */
-    private _placeStructure(state: WorldState, grid: GridModel, command: Command, outEvents: Event[]): void {
-        if (command.type !== CommandType.PlaceStructure) {
-            this._emitCommandRejected(
-                command, 
-                RejectReason.InvalidType, 
-                "Invalid command type for placing structure.", 
-                outEvents);
-            return;
-        }
-        
-        var structureDefinition = getStructureDefinitionById(command.definitionId);
-        var rotationQuadrants: Rotation = (command.rotation % 4) as Rotation;
-        var footprintOffsets = structureDefinition.footprint;
-        var rotatedOffsets = rotateOffsets(footprintOffsets, rotationQuadrants);
-        var footprintTiles: TileCoord[] = computeFootprintTiles(command.coord, rotatedOffsets);
-
-        if (structureDefinition.placeable === false) {
-            this._emitCommandRejected(
-                command, 
-                RejectReason.NotPlaceable, 
-                "This structure cannot be placed.", 
-                outEvents);
+    private placeStructure(
+        state: WorldState,
+        grid: GridModel,
+        command: PlaceStructureCommand,
+        outEvents: Event[],
+    ): void {
+        if (!isValidRotation(command.rotation)) {
+            outEvents.push(rejected(command, RejectReason.InvalidPayload, 'Rotation must be 0, 1, 2 or 3.'));
             return;
         }
 
-        for (var tileCoord of footprintTiles) {
-            if (grid.hasStructureAt(tileCoord)) {
-                this._emitCommandRejected(
-                    command, 
-                    RejectReason.Occupied, 
-                    "Cannot place structure; footprint area is occupied.", 
-                    outEvents);
-                return;
-            }
+        const definition = getStructureDefinitionById(command.definitionId);
+        if (!definition.placeable) {
+            outEvents.push(rejected(command, RejectReason.NotPlaceable, 'This structure cannot be placed.'));
+            return;
         }
 
-        var createdStructure: StructureRecord = state.structureStore.createStructure(command.definitionId, command.rotation, command.coord);
-        createdStructure.tick = state.tickIndex;
-
-        for (var tileCoord of footprintTiles) {
-            grid.setStructureIdAt(tileCoord, createdStructure.id);
+        const footprintTiles = computeFootprintTiles(
+            command.coord,
+            rotateOffsets(definition.footprint, command.rotation),
+        );
+        if (footprintTiles.some((tile) => grid.hasStructureAt(tile))) {
+            outEvents.push(rejected(command, RejectReason.Occupied, 'Footprint area is occupied.'));
+            return;
         }
 
-        const chunkCoords = dedupeChunkCoords(footprintTiles.map(tile => tileToChunk(tile)));
-        grid.setChunkPersistent(chunkCoords);
+        const structure = state.structureStore.createStructure(
+            command.definitionId,
+            command.rotation,
+            command.coord,
+        );
+        structure.tick = state.tickIndex;
+
+        for (const tile of footprintTiles) {
+            grid.setStructureIdAt(tile, structure.id);
+        }
+        grid.setChunkPersistent(dedupeChunkCoords(footprintTiles.map(tileToChunk)));
 
         outEvents.push({
             type: EventType.StructurePlaced,
-            structureId: createdStructure.id,
-            structureKey: getStructureDefinitionById(createdStructure.definitionId).key,
+            structureId: structure.id,
+            structureKey: definition.key,
             structureCoord: command.coord,
             structureRotation: command.rotation,
         });
     }
 
-    /**
-     * Removes a structure at the specified tile coordinate.
-     * @param state The current world state.
-     * @param grid The grid model representing the world.
-     * @param command The command containing the tile coordinate.
-     * @param outEvents The array to which events will be pushed.
-     */
-    private _removeStructure(state: WorldState, grid: GridModel, command: Command, outEvents: Event[]): void { 
-        if (command.type !== CommandType.RemoveStructure) {
-            this._emitCommandRejected(
-                command, 
-                RejectReason.InvalidType, 
-                "Invalid command type for removing structure.", 
-                outEvents);
-            return;
-        }
-        
-        var selectedTilePosition = command.coord;
-        var structureId = grid.getStructureIdAt(selectedTilePosition);
-        var structure = state.structureStore.getStructureById(structureId);
-        
-        if (structureId == STRUCTURE_ID_NONE || structureId === null || structure === null) {
-            this._emitCommandRejected(
-                command, 
-                RejectReason.Empty, 
-                "No structure to remove at the selected position.", 
-                outEvents);
+    private removeStructure(
+        state: WorldState,
+        grid: GridModel,
+        command: RemoveStructureCommand,
+        outEvents: Event[],
+    ): void {
+        const structureId = grid.getStructureIdAt(command.coord);
+        const structure = state.structureStore.getStructureById(structureId);
+        if (structureId === STRUCTURE_ID_NONE || structure === null) {
+            outEvents.push(rejected(command, RejectReason.Empty, 'No structure at the selected position.'));
             return;
         }
 
-        var structureDefinition = getStructureDefinitionById(structure.definitionId)
-        var structureKey = structureDefinition.key;
-        var footprintOffsets = structureDefinition.footprint;
-        var rotatedOffsets = rotateOffsets(footprintOffsets, structure.rotation);
-        var footprintTiles = computeFootprintTiles(structure.position, rotatedOffsets);
-
-        if (structureDefinition.deletable === false) {
-            this._emitCommandRejected(
-                command, 
-                RejectReason.NotRemovable, 
-                "This structure cannot be removed.", 
-                outEvents);
+        const definition = getStructureDefinitionById(structure.definitionId);
+        if (!definition.deletable) {
+            outEvents.push(rejected(command, RejectReason.NotRemovable, 'This structure cannot be removed.'));
             return;
         }
 
-        for (var tile of footprintTiles) {
-            if (grid.getStructureIdAt(tile) == structureId) {
+        const footprintTiles = computeFootprintTiles(
+            structure.position,
+            rotateOffsets(definition.footprint, structure.rotation),
+        );
+        for (const tile of footprintTiles) {
+            if (grid.getStructureIdAt(tile) === structureId) {
                 grid.setStructureIdAt(tile, STRUCTURE_ID_NONE);
             }
         }
-
         state.structureStore.removeStructure(structureId);
 
         outEvents.push({
             type: EventType.StructureRemoved,
-            structureId: structureId,   
-            structureKey: structureKey,
+            structureId,
+            structureKey: definition.key,
             structureCoord: structure.position,
             structureRotation: structure.rotation,
-        });
-
-    }
-
-    /**
-     * Sets the focus chunk in the world state.
-     * @param state The current world state.
-     * @param coord The chunk coordinate to set as the focus chunk.
-     */
-    private _setFocusChunk(state: WorldState, coord: ChunkCoord): void {        
-        var newFocusChunkCoord = coord;
-
-        state.hasPendingFocusChunk = true;
-        state.pendingFocusChunkCoord = newFocusChunkCoord;
-    }
-
-    /**
-     * Emits a CommandRejected event.
-     * @param command The command that was rejected.
-     * @param reason The reason for rejection.
-     * @param details Additional details about the rejection.
-     * @param outEvents The array to which the event will be pushed.
-     */
-    private _emitCommandRejected(command: Command, reason: RejectReason, details: string, outEvents: Event[]): void {
-        outEvents.push({
-            type: EventType.CommandRejected,
-            rejectedCommand: command,
-            reason: reason,
-            details: details,
         });
     }
 }
 
+/** Builds the canonical rejection event (architecture freeze: command rejection contract). */
+function rejected(command: Command, reason: RejectReason, details: string): Event {
+    return { type: EventType.CommandRejected, rejectedCommand: command, reason, details };
+}
+
+function isValidRotation(rotation: number): boolean {
+    return Number.isInteger(rotation) && rotation >= 0 && rotation < QUARTER_TURNS_PER_REVOLUTION;
+}

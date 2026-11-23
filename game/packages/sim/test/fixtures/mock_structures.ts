@@ -1,17 +1,17 @@
 /**
  * Mock structure definitions for testing.
- * 
+ *
  * These mocks provide controlled test data without depending on production definitions.
  */
 
-import { StructureDefinition } from "../../src/types/structure";
+import type { StructureDefinition } from '../../src/types/structure';
 
 /**
  * Standard 1x1 placeable, deletable, rotatable structure.
  */
 export const MOCK_SIMPLE_STRUCTURE: StructureDefinition = {
     id: 1,
-    key: "test-simple",
+    key: 'test-simple',
     footprint: [{ x: 0, y: 0 }],
     ports: [],
     deletable: true,
@@ -24,7 +24,7 @@ export const MOCK_SIMPLE_STRUCTURE: StructureDefinition = {
  */
 export const MOCK_NOT_PLACEABLE: StructureDefinition = {
     id: 2,
-    key: "test-not-placeable",
+    key: 'test-not-placeable',
     footprint: [{ x: 0, y: 0 }],
     ports: [],
     deletable: true,
@@ -37,7 +37,7 @@ export const MOCK_NOT_PLACEABLE: StructureDefinition = {
  */
 export const MOCK_NOT_DELETABLE: StructureDefinition = {
     id: 3,
-    key: "test-not-deletable",
+    key: 'test-not-deletable',
     footprint: [{ x: 0, y: 0 }],
     ports: [],
     deletable: false,
@@ -50,7 +50,7 @@ export const MOCK_NOT_DELETABLE: StructureDefinition = {
  */
 export const MOCK_NOT_ROTATABLE: StructureDefinition = {
     id: 4,
-    key: "test-not-rotatable",
+    key: 'test-not-rotatable',
     footprint: [{ x: 0, y: 0 }],
     ports: [],
     deletable: true,
@@ -63,7 +63,7 @@ export const MOCK_NOT_ROTATABLE: StructureDefinition = {
  */
 export const MOCK_MULTITILE: StructureDefinition = {
     id: 5,
-    key: "test-multitile",
+    key: 'test-multitile',
     footprint: [
         { x: 0, y: 0 },
         { x: 1, y: 0 },

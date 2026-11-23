@@ -1,83 +1,38 @@
-import { CHUNK_SIZE, RESOURCE_ID_NONE, STRUCTURE_ID_NONE } from "../core/constants"
-import { ChunkCoord, TileCoord } from "../types/coords";
+import { CHUNK_SIZE, RESOURCE_ID_NONE, STRUCTURE_ID_NONE } from '../core/constants';
+import type { ChunkCoord, TileCoord } from '../types/coords';
 
 /**
- * Represents a chunk of the game world, managing structures and resources within its tiles.
+ * A CHUNK_SIZE x CHUNK_SIZE block of tiles storing structure and resource ids.
+ * All tile coordinates passed to a chunk are local (0 .. CHUNK_SIZE - 1).
  */
 export class Chunk {
     public readonly size = CHUNK_SIZE;
-
     public readonly coord: ChunkCoord;
 
-    private resourceIds = new Int32Array(CHUNK_SIZE * CHUNK_SIZE);
-    private structureIds = new Int32Array(CHUNK_SIZE * CHUNK_SIZE);
-    
+    private readonly resourceIds = new Int32Array(CHUNK_SIZE * CHUNK_SIZE).fill(RESOURCE_ID_NONE);
+    private readonly structureIds = new Int32Array(CHUNK_SIZE * CHUNK_SIZE).fill(STRUCTURE_ID_NONE);
+
     constructor(coord: ChunkCoord) {
         this.coord = coord;
-        this.structureIds.fill(STRUCTURE_ID_NONE);
-        this.resourceIds.fill(RESOURCE_ID_NONE);
     }
 
-    /**
-     * Converts a tile coordinate to a linear index in the arrays.
-     * @param tileCoordinate The tile coordinate within the chunk.
-     * @returns The linear index corresponding to the tile coordinate.
-     */
-    private index(tileCoordinate: TileCoord): number {
-        return tileCoordinate.y * this.size + tileCoordinate.x;
+    public getStructureAt(local: TileCoord): number {
+        return this.structureIds[this.index(local)] ?? STRUCTURE_ID_NONE;
     }
 
-    /**
-     * Gets the structure ID at the specified tile coordinate.
-     * @param tileCoordinate The tile coordinate within the chunk.
-     * @returns The structure ID at the specified tile coordinate.
-     */
-    public getStructureAt(tileCoordinate: TileCoord): number {
-        return this.structureIds[this.index(tileCoordinate)];
+    public setStructureAt(local: TileCoord, structureId: number): void {
+        this.structureIds[this.index(local)] = structureId;
     }
 
-    /**
-     * Sets the structure ID at the specified tile coordinate.
-     * @param tileCoordinate The tile coordinate within the chunk.
-     * @param structureId The structure ID to set.
-     */
-    public setStructureAt(tileCoordinate: TileCoord, structureId: number): void {
-        this.structureIds[this.index(tileCoordinate)] = structureId;
+    public getResourceAt(local: TileCoord): number {
+        return this.resourceIds[this.index(local)] ?? RESOURCE_ID_NONE;
     }
 
-    /**
-     * Gets the resource ID at the specified tile coordinate.
-     * @param tileCoordinate The tile coordinate within the chunk.
-     * @returns The resource ID at the specified tile coordinate.
-     */
-    public getResourceAt(tileCoordinate: TileCoord): number {
-        return this.resourceIds[this.index(tileCoordinate)];
+    public setResourceAt(local: TileCoord, resourceId: number): void {
+        this.resourceIds[this.index(local)] = resourceId;
     }
 
-    /**
-     * Sets the resource ID at the specified tile coordinate.
-     * @param tileCoordinate The tile coordinate within the chunk.
-     * @param resourceId The resource ID to set.
-     */
-    public setResourceAt(tileCoordinate: TileCoord, resourceId: number): void {
-        this.resourceIds[this.index(tileCoordinate)] = resourceId;
-    }
-
-    /**
-     * Gets the resource ID at the specified tile coordinate.
-     * @param tileCoord The tile coordinate within the chunk.
-     * @returns The resource ID at the specified tile coordinate.
-     */
-    public getResourceId(tileCoord: TileCoord): number {
-        return this.getResourceAt(tileCoord);
-    }
-
-    /**
-     * Gets the structure ID at the specified tile coordinate.
-     * @param tileCoord The tile coordinate within the chunk.
-     * @returns The structure ID at the specified tile coordinate.
-     */
-    public getStructureId(tileCoord: TileCoord): number {
-        return this.getStructureAt(tileCoord);
+    private index(local: TileCoord): number {
+        return local.y * this.size + local.x;
     }
 }

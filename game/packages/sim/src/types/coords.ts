@@ -5,7 +5,7 @@
 export type Int = number;
 
 //0=0, 1=90, 2=180, 3=270
-export type Rotation = 0 | 1 | 2 | 3 
+export type Rotation = 0 | 1 | 2 | 3;
 
 /**
  * Coordinate of a tile in the world grid.

@@ -1,25 +1,26 @@
-import { ChunkCoord } from "../types";
-import { StructureStore } from "../state/structure_store";
-import { Event } from "../types/events";
+import { DEFAULT_WORLD_SEED } from '../core/constants';
+import { StructureStore } from './structure_store';
+import type { ChunkCoord } from '../types';
+import type { Event } from '../types/events';
 
 /**
  * Single source of truth for the simulation.
- * Systems get a reference and mutate it during SimWorld.tick().
+ * Systems receive a reference and mutate it only during SimWorld.tick().
  */
 export class WorldState {
-  public worldSeed: number = 118;
-  public tickIndex: number = 0;
+    public worldSeed = DEFAULT_WORLD_SEED;
+    public tickIndex = 0;
 
-  public generatedChunkCount: number = 0;
-  public activeRadiusChunks: number = 2;
+    public generatedChunkCount = 0;
+    public activeRadiusChunks = 2;
 
-  public hasFocusChunk: boolean = false;
-  public focusChunkCoord: ChunkCoord | null = null;
+    /** Chunk the camera is centred on; null until the view sets one. */
+    public focusChunkCoord: ChunkCoord | null = null;
+    /** Focus requested by a command in the current tick; applied after all commands. */
+    public pendingFocusChunkCoord: ChunkCoord | null = null;
 
-  public hasPendingFocusChunk: boolean = false;
-  public pendingFocusChunkCoord: ChunkCoord | null = null;
+    public structureStore = new StructureStore();
 
-  public structureStore = new StructureStore();
-
-  public currentTickOutEvents: Event[] = [];
+    /** Event sink of the tick in progress; null outside of SimWorld.tick(). */
+    public currentTickOutEvents: Event[] | null = null;
 }

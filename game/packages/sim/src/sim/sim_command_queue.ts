@@ -1,49 +1,24 @@
-import { Command } from "../types/commands";
+import type { Command } from '../types/commands';
 
 /**
- * A queue for managing simulation commands to be processed in the game.
+ * Collects commands from UI/input between ticks and hands them to SimWorld.tick() in FIFO order.
  */
 export class SimCommandQueue {
-    private pendingCommands: Array<Command> = [];
-    private drainingCommands: Array<Command> = [];
-    private lastCommand: Command | null = null;
+    private pendingCommands: Command[] = [];
 
-    /**
-     * Enqueue a command to be processed in the next simulation tick.
-     * @param command The command to enqueue.
-     * @returns void
-     */
-    public enqueueCommand(command: Command | null): void {
-        if (command == null)
-            return;
-
+    /** Adds a command for the next tick. */
+    public enqueueCommand(command: Command): void {
         this.pendingCommands.push(command);
-        this.lastCommand = command;
     }
 
-    /**
-     * Drain all pending commands for processing.
-     * @returns An array of commands that were pending.
-     */
-    public drainCommands(): Array<Command> {
-        this.drainingCommands = this.pendingCommands;
+    /** Returns all pending commands in enqueue order and empties the queue. */
+    public drainCommands(): Command[] {
+        const drained = this.pendingCommands;
         this.pendingCommands = [];
-        return this.drainingCommands;
+        return drained;
     }
 
-    /**
-     * Get the count of pending commands.
-     * @returns The number of pending commands.
-     */
     public getCommandsCount(): number {
         return this.pendingCommands.length;
-    }
-
-    /**
-     * Get the last enqueued command.
-     * @returns The last command or null if none exist.
-     */
-    public getLastCommand(): Command | null {
-        return this.lastCommand;
     }
 }

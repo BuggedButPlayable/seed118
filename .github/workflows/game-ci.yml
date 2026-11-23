@@ -1,0 +1,28 @@
+name: game-ci
+
+on:
+  push:
+    branches: [develop, main]
+    paths: ['game/**', '.github/workflows/game-ci.yml']
+  pull_request:
+    paths: ['game/**', '.github/workflows/game-ci.yml']
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: game
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: game/package-lock.json
+      - run: npm ci --ignore-scripts
+      - run: npm run format:check
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm run dup
+      - run: npm run coverage

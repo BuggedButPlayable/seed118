@@ -1,0 +1,12 @@
+#!/bin/sh
+# Conventional Commits: <type>(<optional scope>): <summary>
+pattern='^(feat|fix|docs|refactor|test|perf|build|ci|chore|style|revert)(\([a-z0-9-]+\))?!?: .+'
+first_line=$(head -n 1 "$1")
+case "$first_line" in
+  Merge*|Revert*) exit 0 ;;
+esac
+if ! echo "$first_line" | grep -Eq "$pattern"; then
+  echo "Commit message must follow Conventional Commits, e.g. 'feat(sim): add belt transport'." >&2
+  echo "Got: $first_line" >&2
+  exit 1
+fi

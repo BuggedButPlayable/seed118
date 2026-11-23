@@ -11,6 +11,8 @@ The repository contains both the game itself and the project homepage. Developme
 - `game/` — the game client and simulation
 - `homepage/` — the project website
 - `.github/` — contribution guidelines and meta files
+- `docs/` — game design, architecture contract, coding rules, lore
+- `CLAUDE.md` — entry point for Claude Code sessions
 
 ---
 

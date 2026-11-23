@@ -2,8 +2,8 @@
  * Defines command types and structures for simulation actions in the game.
  */
 
-import {DefId} from "./ids";
-import {TileCoord, Rotation, ChunkCoord} from "./coords";
+import type { DefId } from './ids';
+import type { TileCoord, Rotation, ChunkCoord } from './coords';
 
 /**
  * Types of commands that can be executed in the simulation.
@@ -17,18 +17,18 @@ export enum CommandType {
 /**
  * Represents a command to be executed in the simulation.
  */
-export type Command = 
+export type Command =
     | {
-        type: CommandType.PlaceStructure;
-        definitionId: DefId;
-        coord: TileCoord;
-        rotation: Rotation;
-    }
+          type: CommandType.PlaceStructure;
+          definitionId: DefId;
+          coord: TileCoord;
+          rotation: Rotation;
+      }
     | {
-        type: CommandType.RemoveStructure;
-        coord: TileCoord;
-    }
+          type: CommandType.RemoveStructure;
+          coord: TileCoord;
+      }
     | {
-        type: CommandType.SetFocusChunk;
-        coord: ChunkCoord;
-    };
+          type: CommandType.SetFocusChunk;
+          coord: ChunkCoord;
+      };

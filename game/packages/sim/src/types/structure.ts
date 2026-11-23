@@ -1,10 +1,10 @@
-import {DefId, StructureId} from './ids'
-import {Rotation, TileCoord} from './coords'
+import type { DefId, StructureId } from './ids';
+import type { Rotation, TileCoord } from './coords';
 
-export type Side = 0 | 1 | 2 | 3 // 0: north, 1: east, 2: south, 3: west
-export type PortType = 'input' | 'output'
+export type Side = 0 | 1 | 2 | 3; // 0: north, 1: east, 2: south, 3: west
+export type PortType = 'input' | 'output';
 
-export type StructureKey = string
+export type StructureKey = string;
 
 export interface StructurePort {
     tile: TileCoord;

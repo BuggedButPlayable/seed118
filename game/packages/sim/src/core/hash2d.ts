@@ -1,53 +1,59 @@
 /**
- * Core 2D hashing functions for procedural generation and randomness.
+ * Seeded integer hashing for procedural generation. This is the only source of randomness in the
+ * simulation (coding rules §4.1). Changing any constant changes every generated world.
  */
 
-/**
- * Ensures a number is treated as a 32-bit unsigned integer.
- * @param n The input number.
- * @returns The number as a 32-bit unsigned integer.
- */
-const u32 = (n: number): number => n >>> 0;
+// MurmurHash3-style finalizer constants (bit shifts and multipliers)
+const MIX_SHIFT_A = 16;
+const MIX_SHIFT_B = 15;
+const MIX_SHIFT_C = 13;
+const SINGLE_MULTIPLIER_A = 0x7feb352d;
+const SINGLE_MULTIPLIER_B = 0x846ca68b;
+const COORD_PRIME_X = 0x27d4eb2d;
+const COORD_PRIME_Y = 0x165667b1;
+const COORD_MULTIPLIER_A = 0x85ebca6b;
+const COORD_MULTIPLIER_B = 0xc2b2ae35;
+
+// hashToUnitFloat keeps the lowest 24 bits
+const UNIT_FLOAT_MASK = 0x00ffffff;
+const UNIT_FLOAT_RANGE = 0x01000000;
+
+/** Reinterprets a number as an unsigned 32-bit integer. */
+const toUint32 = (value: number): number => value >>> 0;
 
 /**
- * A fast, non-cryptographic hash function for 2D coordinates.
- * Based on MurmurHash3 finalizer.
- * @param x The x coordinate.
- * @param y The y coordinate.
- * @returns A 32-bit unsigned integer hash.
+ * Hashes a single 32-bit value.
+ * @param value The input value.
+ * @returns An unsigned 32-bit hash.
  */
-export const hashU32 = (x: number): number => {
-    let v = u32(x);
-    v = u32((v ^ (v >>> 16)) * 0x7FEB352D);
-    v = u32((v ^ (v >>> 15)) * 0x846CA68B);
-    v = u32(v ^ (v >>> 16));
-    return v;
+export const hashU32 = (value: number): number => {
+    let hash = toUint32(value);
+    hash = toUint32((hash ^ (hash >>> MIX_SHIFT_A)) * SINGLE_MULTIPLIER_A);
+    hash = toUint32((hash ^ (hash >>> MIX_SHIFT_B)) * SINGLE_MULTIPLIER_B);
+    hash = toUint32(hash ^ (hash >>> MIX_SHIFT_A));
+    return hash;
 };
 
 /**
- * A fast, non-cryptographic hash function for 2D coordinates with a seed.
- * Based on MurmurHash3 finalizer.
+ * Hashes a 2D integer coordinate together with a seed.
  * @param x The x coordinate.
  * @param y The y coordinate.
  * @param seed The seed value.
- * @returns A 32-bit unsigned integer hash.
+ * @returns An unsigned 32-bit hash.
  */
 export const hash2i = (x: number, y: number, seed: number): number => {
-    let h = u32(seed);
-    h = u32(h ^ u32(x * 0x27D4EB2D));
-    h = u32(h ^ u32(y * 0x165667B1));
-    h = u32((h ^ (h >>> 15)) * 0x85EBCA6B);
-    h = u32((h ^ (h >>> 13)) * 0xC2B2AE35);
-    h = u32(h ^ (h >>> 16));
-    return h;
-}
+    let hash = toUint32(seed);
+    hash = toUint32(hash ^ toUint32(x * COORD_PRIME_X));
+    hash = toUint32(hash ^ toUint32(y * COORD_PRIME_Y));
+    hash = toUint32((hash ^ (hash >>> MIX_SHIFT_B)) * COORD_MULTIPLIER_A);
+    hash = toUint32((hash ^ (hash >>> MIX_SHIFT_C)) * COORD_MULTIPLIER_B);
+    hash = toUint32(hash ^ (hash >>> MIX_SHIFT_A));
+    return hash;
+};
 
 /**
- * Converts a 32-bit hash to a floating-point number in the range [0, 1).
- * @param h The 32-bit unsigned integer hash.
- * @returns A floating-point number in the range [0, 1).
+ * Converts a 32-bit hash to a number in the range [0, 1).
+ * @param hash The unsigned 32-bit hash.
+ * @returns A number in [0, 1).
  */
-export const hashToUnitFloat = (h: number): number => {
-  const v = (h & 0x00ffffff) >>> 0;
-  return v / 16777216.0;
-};
+export const hashToUnitFloat = (hash: number): number => toUint32(hash & UNIT_FLOAT_MASK) / UNIT_FLOAT_RANGE;

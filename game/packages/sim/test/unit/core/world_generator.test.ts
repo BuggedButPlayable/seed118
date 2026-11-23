@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { generateNewChunk } from '../../../src/core/world_generator';
-import { GridModel } from '../../../src/grid/grid_model';
-import { WorldState } from '../../../src/state/world_state';
-import { ChunkCoord } from '../../../src/types';
+import type { GridModel } from '../../../src/grid/grid_model';
+import type { WorldState } from '../../../src/state/world_state';
+import type { ChunkCoord } from '../../../src/types';
 import { EventType } from '../../../src/types/events';
 import { CHUNK_SIZE } from '../../../src/core/constants';
 import { generateResourceId } from '../../../src/core/cluster_generator';
@@ -16,14 +16,14 @@ describe('generateNewChunk', () => {
 
     beforeEach(() => {
         mockGrid = {
-            setResourceIdAt: vi.fn()
-        } as any;
+            setResourceIdAt: vi.fn(),
+        } as unknown as GridModel;
 
         mockState = {
             worldSeed: 12345,
             generatedChunkCount: 0,
-            currentTickOutEvents: []
-        } as any;
+            currentTickOutEvents: [],
+        } as unknown as WorldState;
 
         chunkCoord = { x: 1, y: 2 };
 
@@ -39,7 +39,7 @@ describe('generateNewChunk', () => {
     it('should calculate correct world coordinates', () => {
         generateNewChunk(chunkCoord, mockGrid, mockState);
 
-        const firstCall = vi.mocked(mockGrid.setResourceIdAt).mock.calls[0][0];
+        const firstCall = vi.mocked(mockGrid.setResourceIdAt).mock.calls[0]![0];
         expect(firstCall).toEqual({ x: CHUNK_SIZE, y: CHUNK_SIZE * 2 });
     });
 
@@ -55,7 +55,7 @@ describe('generateNewChunk', () => {
         expect(mockState.currentTickOutEvents).toHaveLength(1);
         expect(mockState.currentTickOutEvents![0]).toEqual({
             type: EventType.ChunkGenerated,
-            coord: chunkCoord
+            coord: chunkCoord,
         });
     });
 
@@ -63,6 +63,6 @@ describe('generateNewChunk', () => {
         generateNewChunk(chunkCoord, mockGrid, mockState);
 
         const call = vi.mocked(generateResourceId).mock.calls[0];
-        expect(call[1]).toBe(mockState.worldSeed);
+        expect(call![1]).toBe(mockState.worldSeed);
     });
 });

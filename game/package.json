@@ -1,13 +1,45 @@
 {
+  "name": "seed118-game",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "packages/*"
+  ],
   "scripts": {
     "test": "vitest --run",
     "test:watch": "vitest",
     "coverage": "vitest run --coverage",
-    "prepare": "husky"
+    "typecheck": "tsc -p tsconfig.json",
+    "lint": "eslint . --max-warnings 0",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "check": "npm run format:check && npm run lint && npm run typecheck && npm run dup && npm run test",
+    "prepare": "cd .. && husky",
+    "dup": "jscpd packages/*/src --min-tokens 40 --ignore \"**/defs/structure_def/**\" --exit-code 1 --silent && jscpd packages/*/test --min-tokens 70 --exit-code 1 --silent"
+  },
+  "lint-staged": {
+    "*.{ts,mjs,js}": [
+      "prettier --write",
+      "eslint --max-warnings 0"
+    ],
+    "*.{json,md}": [
+      "prettier --write"
+    ]
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@vitest/coverage-v8": "^4.0.18",
+    "eslint": "^10.15.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-sonarjs": "^4.2.2",
+    "globals": "^17.14.0",
     "husky": "^9.0.11",
+    "jscpd": "^5.4.3",
+    "lint-staged": "^17.6.2",
+    "prettier": "^3.10.1",
+    "typescript": "~6.0.3",
+    "typescript-eslint": "^8.73.0",
     "vitest": "^4.0.18"
   }
 }

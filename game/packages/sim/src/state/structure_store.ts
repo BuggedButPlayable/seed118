@@ -1,53 +1,46 @@
-import { Rotation, TileCoord } from "../types/coords";
-import { DefId, StructureId } from "../types/ids";
-import { StructureRecord } from "../types/structure";
+import type { Rotation, TileCoord } from '../types/coords';
+import type { DefId, StructureId } from '../types/ids';
+import type { StructureRecord } from '../types/structure';
 
 /**
  * Store for all structures in the world
  */
 export class StructureStore {
-
     private nextId: number;
 
-    private structures: Map<StructureId, StructureRecord> = new Map();
+    private readonly structures: Map<StructureId, StructureRecord> = new Map();
 
     constructor(structures?: StructureRecord[]) {
-        this.nextId = 1
-        
-        if (structures) {
-            for (const structure of structures) {
-                this.structures.set(structure.id, structure);
-                if (structure.id >= this.nextId) {
-                    this.nextId = structure.id + 1;
-                }
-            }
+        this.nextId = 1;
+        for (const structure of structures ?? []) {
+            this.structures.set(structure.id, structure);
+            this.nextId = Math.max(this.nextId, structure.id + 1);
         }
     }
 
     /**
-     * Creates a new structure and adds it to the store
-     * @param structureType 
-     * @param rotation 
-     * @param position 
-     * @returns 
+     * Creates a new structure with the next free id and adds it to the store.
+     * @param definitionId Definition of the structure.
+     * @param rotation Rotation chosen at placement time.
+     * @param position Anchor tile.
+     * @returns The created record.
      */
     public createStructure(definitionId: DefId, rotation: Rotation, position: TileCoord): StructureRecord {
-        var id = this.nextId;
+        const id = this.nextId;
         this.nextId += 1;
 
         const structureRecord: StructureRecord = {
-            id: id as StructureId,
-            definitionId: definitionId,
-            position: position,
+            id,
+            definitionId,
+            position,
             tick: 0,
-            rotation: rotation as Rotation
+            rotation,
         };
 
-        this.structures.set(id as StructureId, structureRecord);
+        this.structures.set(id, structureRecord);
 
         return structureRecord;
     }
-
 
     /**
      * Checks if a structure exists in the store
@@ -57,16 +50,13 @@ export class StructureStore {
     public hasStructure(structureId: StructureId): boolean {
         return this.structures.has(structureId);
     }
-    
+
     /**
      * Retrieves a structure from the store
      * @param structureId Id of the structure to get
      * @returns The structure record, or null if it does not exist
      */
-    public getStructureById(structureId: StructureId | null): StructureRecord | null {
-        if (structureId === null) {
-            return null;
-        }
+    public getStructureById(structureId: StructureId): StructureRecord | null {
         return this.structures.get(structureId) ?? null;
     }
 
@@ -80,27 +70,10 @@ export class StructureStore {
     }
 
     /**
-     * Rotates a structure in the store
-     * @param structureId Id of the structure to rotate
-     * @param rotation New rotation value
-     * @returns Whether the structure was successfully rotated
-     */
-    public rotateStructure(structureId: StructureId, rotation: Rotation): boolean {
-        if (this.hasStructure(structureId)) {
-            const structure = this.structures.get(structureId)!;
-            structure.rotation = rotation;
-            this.structures.set(structureId, structure);
-            return true;
-        }
-        return false;
-    }
-
-    /**
      * Retrieves all structures in the store
      * @returns An array of all structure records
      */
     public getAllStructures(): StructureRecord[] {
         return Array.from(this.structures.values());
     }
-    
 }
