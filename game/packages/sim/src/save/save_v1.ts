@@ -3,6 +3,7 @@
  * It serves as a starting point for implementing a more robust save/load system in the future.
  */
 
+import { byCoord, byId } from '../core/ordering';
 import { getStructureDefinitionById, getStructureDefinitionByKey } from '../defs/structure_registry';
 import { computeFootprintTiles, dedupeChunkCoords, rotateOffsets, tileToChunk } from '../grid/grid_math';
 import { GridModel } from '../grid/grid_model';
@@ -40,22 +41,19 @@ export function saveSaveGameV1(state: WorldState, grid: GridModel): SaveGameV1 {
     const structures: SaveStructureV1[] = state.structureStore
         .getAllStructures()
         .slice()
-        .sort((a, b) => a.id - b.id)
-        .map((s) => {
-            const definition = getStructureDefinitionById(s.definitionId);
-            return {
-                id: s.id,
-                definition_key: definition.key,
-                coord: s.position,
-                rotation: s.rotation,
-                tick: s.tick,
-            };
-        });
+        .sort(byId)
+        .map((structure) => ({
+            id: structure.id,
+            definition_key: getStructureDefinitionById(structure.definitionId).key,
+            coord: structure.position,
+            rotation: structure.rotation,
+            tick: structure.tick,
+        }));
 
     const persistentChunks: ChunkCoord[] = grid
         .getAllPersistentChunks()
         .slice()
-        .sort((a, b) => a.y - b.y || a.x - b.x)
+        .sort(byCoord)
         .map((coord) => ({ x: coord.x, y: coord.y }));
 
     return {
@@ -84,8 +82,12 @@ export function loadSaveGameV1(save: SaveGameV1): { state: WorldState; grid: Gri
 
     const records: StructureRecord[] = [];
     for (const structure of save.structures) {
-        if (!Number.isFinite(structure.id) || structure.id <= 0) continue;
-        if (!structure.definition_key || typeof structure.definition_key !== 'string') continue;
+        if (!Number.isFinite(structure.id) || structure.id <= 0) {
+            continue;
+        }
+        if (!structure.definition_key || typeof structure.definition_key !== 'string') {
+            continue;
+        }
 
         const definition = getStructureDefinitionByKey(structure.definition_key);
         records.push({
@@ -97,7 +99,7 @@ export function loadSaveGameV1(save: SaveGameV1): { state: WorldState; grid: Gri
         });
     }
 
-    records.sort((a, b) => a.id - b.id);
+    records.sort(byId);
     state.structureStore = new StructureStore(records);
 
     for (const structure of records) {

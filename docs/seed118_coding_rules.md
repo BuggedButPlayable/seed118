@@ -1,5 +1,5 @@
 # seed118 — Coding Rules & Workflow
-Version: v1.0 · Status: **binding**
+Version: v1.1 · Status: **binding**
 
 This file defines *how* code is written for S.E.E.D 118. `seed118_architecture.md` defines *what* the
 system must guarantee. Both are binding. If a rule blocks you, change the rule here (in its own commit,
@@ -34,14 +34,20 @@ whenever a rule is broken twice, add a check for it.
 - The pre-commit hook runs format, lint, typecheck and tests. **Never use `--no-verify`.**
 
 ### 1.4 Definition of Done
-- [ ] `npm run check` passes (format, lint, typecheck, tests) 🔒
+- [ ] `npm run check` passes (format, lint, typecheck, duplication, tests) 🔒
+- [ ] Review pass done (§1.5)
 - [ ] Coverage of `packages/sim` stays above its thresholds 🔒
 - [ ] Every new behaviour has a test; every fixed bug has a regression test
 - [ ] Determinism tests still pass 🔒
 - [ ] No `TODO` without an issue link, no commented-out code, no dead code
 - [ ] Docs updated if a contract, mechanic or public API changed
 
-### 1.5 When unsure
+### 1.5 Review pass
+Before a PR goes to Daniel, run a fresh review over the diff (Claude Code: `/simplify` for reuse and
+clarity, `/code-review` for bugs). It looks for what tools can't see: helpers that already exist,
+logic duplicated in different words, unclear names, functions doing two jobs.
+
+### 1.6 When unsure
 Ask instead of guessing. This applies especially to gameplay rules, numbers (balancing), lore wording
 and anything visual: those decisions belong to Daniel.
 
@@ -103,8 +109,9 @@ game/
 | Lines per file (source) | 300 |
 | Lines per function | 60 |
 | Parameters per function | 4 (group the rest into an object) |
-| Nesting depth | 3 |
+| Nesting depth inside a function | 2 |
 | Cyclomatic complexity | 12 |
+| Cognitive complexity (how hard it is to *read*) | 10 |
 
 If you hit a limit, split by responsibility. Don't squeeze the code.
 
@@ -122,16 +129,75 @@ If you hit a limit, split by responsibility. Don't squeeze the code.
 Names say what something *is* in game terms (`fusor`, `heatRing`, `coreStage`), using the vocabulary of
 the game design doc. No abbreviations except well-known ones (`id`, `def`, `coord`).
 
-### 3.4 Formatting 🔒
+### 3.4 Readability
+
+**Never nesting** 🔒 (depth 2): handle the special case first and leave the function early.
+```ts
+// no                                   // yes
+if (definition) {                       if (!definition) {
+    if (definition.placeable) {             return reject(...);
+        place(...);                     }
+    }                                   if (!definition.placeable) {
+}                                           return reject(...);
+                                        }
+                                        place(...);
+```
+Loops inside loops become a helper function or a precomputed list (see `NEIGHBOUR_CELL_OFFSETS`).
+
+**Names** 🔒: at least two characters, except `x`, `y` (coordinates) and `_` (unused). No `e`, `s`,
+`a`/`b`, `i`: write `event`, `structure`, `left`/`right`, `tileIndex`. Booleans read as questions
+(`isPlaceable`, `hasStructureAt`). Functions start with a verb (`computeFootprintTiles`).
+
+**No magic numbers** 🔒 in `sim` logic: every number except -1, 0, 1, 2 gets a named constant that says
+what it means. Balancing values belong in `defs/`, not in systems.
+
+**One function, one job.** If you need "and" to describe it, split it. A function either changes state
+or returns information (command-query separation), not both, unless the name says so (`createStructure`).
+
+**No flag parameters.** `setVisible(true)` / `place(tile, true)` hide meaning. Use two functions or an
+options object with named fields.
+
+**Pure where possible.** Prefer functions that take input and return output. Do not modify parameters
+🔒 (`no-param-reassign`); systems mutate only the `WorldState` they are given.
+
+**Consistent shape** 🔒: class members are ordered fields → constructor → public → private methods.
+Files are ordered imports → constants → types → exports → private helpers.
+
+**Prefer clear over clever.** No nested ternaries 🔒, no bit tricks outside `core/hash2d`, no
+one-liners that need a comment to be understood.
+
+### 3.5 No duplication (DRY, with judgement)
+
+**Enforced** 🔒: `npm run dup` (jscpd) fails on copy-paste of ≥ 40 tokens in source and ≥ 70 tokens in
+tests. SonarJS additionally flags identical functions and branches.
+
+**Before writing a helper, search for it.** Helpers have a fixed home, so there is one place to look:
+
+| Kind of helper | Lives in |
+|---|---|
+| Coordinate math, footprints, rotation | `sim/src/grid/grid_math.ts` |
+| Sort order (`byId`, `byCoord`) | `sim/src/core/ordering.ts` |
+| Seeded randomness | `sim/src/core/hash2d.ts` |
+| Definition lookup | `sim/src/defs/definition_lookup.ts` |
+| Test builders (`placeCommand`, ...), `findEvent`, shared scripts | `sim/test/fixtures/` |
+
+**DRY means one place for each piece of knowledge**, not "no two lines look alike". Two functions that
+look the same but change for different reasons (structure layer vs. resource layer) may stay separate.
+Rule of three: when the same logic appears a third time, extract it. Don't build abstractions for
+cases that don't exist yet (YAGNI).
+
+Tools only find copy-paste. The same idea written differently is caught in the review pass (§1.5).
+
+### 3.6 Formatting 🔒
 Prettier decides (4 spaces, single quotes, trailing commas, width 110). Don't discuss style in reviews.
 
-### 3.5 Comments
+### 3.7 Comments
 - Exported API gets a TSDoc comment explaining *what* and any non-obvious constraint.
 - Inside functions, comments explain *why*, never *what*.
 - Reference contracts where relevant: `// architecture §5.2: receiver decides acceptance`.
 - No commented-out code. Git remembers.
 
-### 3.6 Errors
+### 3.8 Errors
 - **Invalid player input** (commands): never throw. Emit `CommandRejected` with a `RejectReason`.
 - **Broken invariants / programmer errors** (unknown definition id, corrupt state): `throw new Error()`
   with a message that names the value.

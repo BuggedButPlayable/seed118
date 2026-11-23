@@ -24,4 +24,5 @@ jobs:
       - run: npm run format:check
       - run: npm run lint
       - run: npm run typecheck
+      - run: npm run dup
       - run: npm run coverage

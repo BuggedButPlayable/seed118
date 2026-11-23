@@ -8,10 +8,10 @@ export function findEvent<T extends EventType>(
     events: readonly Event[],
     type: T,
 ): Extract<Event, { type: T }> {
-    const found = events.find((e): e is Extract<Event, { type: T }> => e.type === type);
+    const found = events.find((event): event is Extract<Event, { type: T }> => event.type === type);
     if (!found) {
         throw new Error(
-            `Expected a ${EventType[type]} event, got: ${events.map((e) => EventType[e.type]).join(', ')}`,
+            `Expected a ${EventType[type]} event, got: ${events.map((event) => EventType[event.type]).join(', ')}`,
         );
     }
     return found;

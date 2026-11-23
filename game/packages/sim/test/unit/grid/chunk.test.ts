@@ -3,6 +3,13 @@ import { Chunk } from '../../../src/grid/chunk';
 import { CHUNK_SIZE, RESOURCE_ID_NONE, STRUCTURE_ID_NONE } from '../../../src/core/constants';
 import type { ChunkCoord, TileCoord } from '../../../src/types/coords';
 
+const CHUNK_CORNERS: readonly TileCoord[] = [
+    { x: 0, y: 0 },
+    { x: CHUNK_SIZE - 1, y: 0 },
+    { x: 0, y: CHUNK_SIZE - 1 },
+    { x: CHUNK_SIZE - 1, y: CHUNK_SIZE - 1 },
+];
+
 describe('Chunk', () => {
     let chunk: Chunk;
     const testChunkCoord: ChunkCoord = { x: 0, y: 0 };
@@ -47,14 +54,7 @@ describe('Chunk', () => {
         });
 
         it('should handle corner coordinates', () => {
-            const corners: TileCoord[] = [
-                { x: 0, y: 0 },
-                { x: CHUNK_SIZE - 1, y: 0 },
-                { x: 0, y: CHUNK_SIZE - 1 },
-                { x: CHUNK_SIZE - 1, y: CHUNK_SIZE - 1 },
-            ];
-
-            corners.forEach((coord, index) => {
+            CHUNK_CORNERS.forEach((coord, index) => {
                 const structureId = 100 + index;
                 chunk.setStructureAt(coord, structureId);
                 expect(chunk.getStructureAt(coord)).toBe(structureId);
@@ -72,14 +72,7 @@ describe('Chunk', () => {
         });
 
         it('should handle corner coordinates', () => {
-            const corners: TileCoord[] = [
-                { x: 0, y: 0 },
-                { x: CHUNK_SIZE - 1, y: 0 },
-                { x: 0, y: CHUNK_SIZE - 1 },
-                { x: CHUNK_SIZE - 1, y: CHUNK_SIZE - 1 },
-            ];
-
-            corners.forEach((coord, index) => {
+            CHUNK_CORNERS.forEach((coord, index) => {
                 const resourceId = 200 + index;
                 chunk.setResourceAt(coord, resourceId);
                 expect(chunk.getResourceAt(coord)).toBe(resourceId);

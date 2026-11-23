@@ -1,3 +1,4 @@
+import { focusCommand } from '../../fixtures/commands';
 import { describe, expect, it } from 'vitest';
 
 import { SimWorld } from '../../../src/sim/sim_world';
@@ -7,21 +8,19 @@ import { EventType, RejectReason } from '../../../src/types/events';
 import type { Event } from '../../../src/types/events';
 import { findEvent } from '../../fixtures/find_event';
 
-const focusOn = (x: number, y: number): Command => ({ type: CommandType.SetFocusChunk, coord: { x, y } });
-
 describe('SimWorld', () => {
     it('emits FocusChunkUpdated only when the focus actually changes', () => {
         const sim = new SimWorld();
 
         const first: Event[] = [];
-        sim.tick([focusOn(0, 0)], first);
+        sim.tick([focusCommand({ x: 0, y: 0 })], first);
         const second: Event[] = [];
-        sim.tick([focusOn(0, 0)], second);
+        sim.tick([focusCommand({ x: 0, y: 0 })], second);
         const third: Event[] = [];
-        sim.tick([focusOn(1, 0)], third);
+        sim.tick([focusCommand({ x: 1, y: 0 })], third);
 
         const count = (events: Event[]): number =>
-            events.filter((e) => e.type === EventType.FocusChunkUpdated).length;
+            events.filter((event) => event.type === EventType.FocusChunkUpdated).length;
         expect(count(first)).toBe(1);
         expect(count(second)).toBe(0);
         expect(count(third)).toBe(1);
@@ -31,14 +30,14 @@ describe('SimWorld', () => {
         const sim = new SimWorld();
 
         const first: Event[] = [];
-        sim.tick([focusOn(0, 0)], first);
+        sim.tick([focusCommand({ x: 0, y: 0 })], first);
         const second: Event[] = [];
         sim.tick([], second);
 
         const radius = 2;
         const expectedChunks = (2 * radius + 1) ** 2;
-        expect(first.filter((e) => e.type === EventType.ChunkGenerated)).toHaveLength(expectedChunks);
-        expect(second.filter((e) => e.type === EventType.ChunkGenerated)).toHaveLength(0);
+        expect(first.filter((event) => event.type === EventType.ChunkGenerated)).toHaveLength(expectedChunks);
+        expect(second.filter((event) => event.type === EventType.ChunkGenerated)).toHaveLength(0);
     });
 
     it('rejects a placement with an invalid rotation', () => {

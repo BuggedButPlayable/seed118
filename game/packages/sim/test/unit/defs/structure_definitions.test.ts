@@ -6,7 +6,7 @@ describe('structure definitions', () => {
     it.each(STRUCTURE_DEFINITIONS.map((def) => [def.key, def] as const))(
         '%s has no duplicate ports',
         (_key, def) => {
-            const keys = def.ports.map((p) => `${p.tile.x},${p.tile.y},${p.side}`);
+            const keys = def.ports.map((port) => `${port.tile.x},${port.tile.y},${port.side}`);
             expect(new Set(keys).size).toBe(keys.length);
         },
     );
@@ -14,7 +14,7 @@ describe('structure definitions', () => {
     it.each(STRUCTURE_DEFINITIONS.map((def) => [def.key, def] as const))(
         '%s only has ports on outer edges of its footprint',
         (_key, def) => {
-            const occupied = new Set(def.footprint.map((t) => `${t.x},${t.y}`));
+            const occupied = new Set(def.footprint.map((tile) => `${tile.x},${tile.y}`));
             const neighbour = [
                 { x: 0, y: -1 },
                 { x: 1, y: 0 },
@@ -30,7 +30,11 @@ describe('structure definitions', () => {
     );
 
     it('uses unique ids and keys', () => {
-        expect(new Set(STRUCTURE_DEFINITIONS.map((d) => d.id)).size).toBe(STRUCTURE_DEFINITIONS.length);
-        expect(new Set(STRUCTURE_DEFINITIONS.map((d) => d.key)).size).toBe(STRUCTURE_DEFINITIONS.length);
+        expect(new Set(STRUCTURE_DEFINITIONS.map((definition) => definition.id)).size).toBe(
+            STRUCTURE_DEFINITIONS.length,
+        );
+        expect(new Set(STRUCTURE_DEFINITIONS.map((definition) => definition.key)).size).toBe(
+            STRUCTURE_DEFINITIONS.length,
+        );
     });
 });

@@ -12,14 +12,9 @@ export class StructureStore {
 
     constructor(structures?: StructureRecord[]) {
         this.nextId = 1;
-
-        if (structures) {
-            for (const structure of structures) {
-                this.structures.set(structure.id, structure);
-                if (structure.id >= this.nextId) {
-                    this.nextId = structure.id + 1;
-                }
-            }
+        for (const structure of structures ?? []) {
+            this.structures.set(structure.id, structure);
+            this.nextId = Math.max(this.nextId, structure.id + 1);
         }
     }
 
@@ -35,11 +30,11 @@ export class StructureStore {
         this.nextId += 1;
 
         const structureRecord: StructureRecord = {
-            id: id,
-            definitionId: definitionId,
-            position: position,
+            id,
+            definitionId,
+            position,
             tick: 0,
-            rotation: rotation,
+            rotation,
         };
 
         this.structures.set(id, structureRecord);

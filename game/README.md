@@ -25,15 +25,16 @@ npm install
 
 ## Commands
 
-| Command                             | What it does                                                                   |
-| ----------------------------------- | ------------------------------------------------------------------------------ |
-| `npm run check`                     | everything CI checks: format, lint, typecheck, tests. **Run before every PR.** |
-| `npm test`                          | run all tests once                                                             |
-| `npm run test:watch`                | tests in watch mode                                                            |
-| `npm run coverage`                  | tests with coverage report (`coverage/index.html`) and thresholds              |
-| `npm run lint` / `npm run lint:fix` | ESLint                                                                         |
-| `npm run format`                    | format everything with Prettier                                                |
-| `npm run typecheck`                 | TypeScript, no emit                                                            |
+| Command                             | What it does                                                                                |
+| ----------------------------------- | ------------------------------------------------------------------------------------------- |
+| `npm run check`                     | everything CI checks: format, lint, typecheck, duplication, tests. **Run before every PR.** |
+| `npm test`                          | run all tests once                                                                          |
+| `npm run test:watch`                | tests in watch mode                                                                         |
+| `npm run coverage`                  | tests with coverage report (`coverage/index.html`) and thresholds                           |
+| `npm run lint` / `npm run lint:fix` | ESLint                                                                                      |
+| `npm run format`                    | format everything with Prettier                                                             |
+| `npm run dup`                       | fails on copy-pasted code (jscpd)                                                           |
+| `npm run typecheck`                 | TypeScript, no emit                                                                         |
 
 Git hooks (in the repo root `.husky/`) run lint-staged, typecheck and tests before each commit and check
 the commit message format.

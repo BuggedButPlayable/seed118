@@ -1,10 +1,11 @@
 import { describe, expect, it } from 'vitest';
+import { byCoord } from '../../../src/core/ordering';
 import { GridModel } from '../../../src/grid/grid_model';
 import { RESOURCE_ID_NONE, STRUCTURE_ID_NONE } from '../../../src/core/constants';
 import type { ChunkCoord, TileCoord } from '../../../src/types';
 
 function sortChunkCoords(coords: ChunkCoord[]): ChunkCoord[] {
-    return [...coords].sort((a, b) => a.y - b.y || a.x - b.x);
+    return [...coords].sort(byCoord);
 }
 
 describe('GridModel (integration)', () => {
@@ -85,31 +86,33 @@ describe('GridModel (integration)', () => {
     it('should mark multiple chunks persistent and ensure they are created', () => {
         const grid = new GridModel();
 
-        const a: ChunkCoord = { x: 0, y: 0 };
-        const b: ChunkCoord = { x: 1, y: 0 };
+        const firstChunk: ChunkCoord = { x: 0, y: 0 };
+        const secondChunk: ChunkCoord = { x: 1, y: 0 };
 
-        grid.setChunkPersistent([a, b], true);
+        grid.setChunkPersistent([firstChunk, secondChunk], true);
 
-        expect(grid.isChunkPersistent(a)).toBe(true);
-        expect(grid.isChunkPersistent(b)).toBe(true);
-        expect(grid.hasChunk(a)).toBe(true);
-        expect(grid.hasChunk(b)).toBe(true);
-        expect(sortChunkCoords(grid.getAllPersistentChunks())).toEqual(sortChunkCoords([a, b]));
+        expect(grid.isChunkPersistent(firstChunk)).toBe(true);
+        expect(grid.isChunkPersistent(secondChunk)).toBe(true);
+        expect(grid.hasChunk(firstChunk)).toBe(true);
+        expect(grid.hasChunk(secondChunk)).toBe(true);
+        expect(sortChunkCoords(grid.getAllPersistentChunks())).toEqual(
+            sortChunkCoords([firstChunk, secondChunk]),
+        );
     });
 
     it('should unmark persistence without deleting chunks', () => {
         const grid = new GridModel();
 
-        const a: ChunkCoord = { x: 0, y: 0 };
-        grid.setChunkPersistent([a], true);
+        const firstChunk: ChunkCoord = { x: 0, y: 0 };
+        grid.setChunkPersistent([firstChunk], true);
 
-        expect(grid.isChunkPersistent(a)).toBe(true);
-        expect(grid.hasChunk(a)).toBe(true);
+        expect(grid.isChunkPersistent(firstChunk)).toBe(true);
+        expect(grid.hasChunk(firstChunk)).toBe(true);
 
-        grid.setChunkPersistent([a], false);
+        grid.setChunkPersistent([firstChunk], false);
 
-        expect(grid.isChunkPersistent(a)).toBe(false);
-        expect(grid.hasChunk(a)).toBe(true);
+        expect(grid.isChunkPersistent(firstChunk)).toBe(false);
+        expect(grid.hasChunk(firstChunk)).toBe(true);
     });
 
     it('should trigger chunk generation by setStructureIdAt and setResourceIdAt', () => {

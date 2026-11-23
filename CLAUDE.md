@@ -17,14 +17,16 @@ Read only the sections a task needs. The game design doc is long, so jump to the
 ## Code
 - `game/packages/sim`: deterministic simulation (TypeScript, zero runtime deps). Public API: `src/index.ts`.
 - `homepage/`: Astro website, separate project with its own tooling.
-- All commands run in `game/`: `npm run check` (format, lint, typecheck, tests) is the definition of
+- All commands run in `game/`: `npm run check` (format, lint, typecheck, duplication, tests) is the definition of
   "done". `npm run lint:fix` and `npm run format` fix most style issues.
 
 ## Non-negotiables (enforced by lint, hooks and CI)
 - `sim` imports nothing from other packages and never touches DOM, time or `Math.random`.
 - Packages import each other only via `@seed118/<pkg>`.
 - No `any`, no `!`, no `var`, no inline `eslint-disable`, no `--no-verify`.
-- Size limits: 300 lines per file, 60 per function, 4 params, depth 3.
+- Size limits: 300 lines per file, 60 per function, 4 params, nesting depth 2 (guard clauses, not nesting).
+- Names ≥ 2 chars (except `x`, `y`, `_`), no magic numbers in sim logic, no copy-paste (`npm run dup`).
+- Before writing a helper, look in its fixed home (coding rules §3.5). Run `/simplify` before a PR.
 - Invalid player commands emit `CommandRejected`; they never throw.
 - New persistent state needs a save version bump, a migration and a roundtrip test.
 

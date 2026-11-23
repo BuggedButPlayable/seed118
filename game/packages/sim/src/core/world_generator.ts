@@ -25,7 +25,7 @@ export function generateNewChunk(chunkCoord: ChunkCoord, grid: GridModel, state:
 
     for (let y = 0; y < tilesPerChunk; y++) {
         for (let x = 0; x < tilesPerChunk; x++) {
-            const localTilePosition = { x: x, y: y };
+            const localTilePosition = { x, y };
             const worldTile = {
                 x: worldOrigin.x + localTilePosition.x,
                 y: worldOrigin.y + localTilePosition.y,

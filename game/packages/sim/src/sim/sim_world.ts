@@ -1,6 +1,7 @@
 import { generateNewChunk } from '../core/world_generator';
 import { GridModel } from '../grid/grid_model';
 import { isSameCoord } from '../grid/grid_math';
+import { byId } from '../core/ordering';
 import { loadSaveGameV1, saveSaveGameV1 } from '../save/save_v1';
 import { WorldState } from '../state/world_state';
 import { CommandSystem } from '../systems/command_system';
@@ -75,7 +76,7 @@ export class SimWorld {
 
     /** All structures, sorted by id. */
     public getStructures(): readonly Readonly<StructureRecord>[] {
-        return this.worldState.structureStore.getAllStructures().sort((a, b) => a.id - b.id);
+        return this.worldState.structureStore.getAllStructures().sort(byId);
     }
 
     public getStructureIdAt(tile: TileCoord): number {

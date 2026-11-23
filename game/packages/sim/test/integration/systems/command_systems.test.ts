@@ -1,12 +1,14 @@
+import { placeCommand, removeCommand, focusCommand } from '../../fixtures/commands';
 import { findEvent } from '../../fixtures/find_event';
 import type { Event } from '../../../src/types/events';
 import { describe, expect, it, beforeEach, afterEach } from 'vitest';
 
+import { byCoord } from '../../../src/core/ordering';
 import { CommandSystem } from '../../../src/systems/command_system';
+import type { ChunkCoord } from '../../../src/types/coords';
 import { GridModel } from '../../../src/grid/grid_model';
 import { WorldState } from '../../../src/state/world_state';
 
-import { CommandType } from '../../../src/types/commands';
 import { EventType, RejectReason } from '../../../src/types/events';
 
 import {
@@ -17,8 +19,8 @@ import {
 } from '../../fixtures/mock_structures';
 import { setupMockRegistry, restoreMockRegistry } from '../../fixtures/mock_registry';
 
-function sortChunkCoords(coords: { x: number; y: number }[]): { x: number; y: number }[] {
-    return [...coords].sort((a, b) => a.y - b.y || a.x - b.x);
+function sortChunkCoords(coords: ChunkCoord[]): ChunkCoord[] {
+    return [...coords].sort(byCoord);
 }
 
 describe('CommandSystem (integration)', () => {
@@ -36,17 +38,7 @@ describe('CommandSystem (integration)', () => {
         const sys = new CommandSystem();
         const events: Event[] = [];
 
-        sys.applyCommand(
-            state,
-            grid,
-            {
-                type: CommandType.PlaceStructure,
-                definitionId: MOCK_NOT_PLACEABLE.id,
-                coord: { x: 0, y: 0 },
-                rotation: 0,
-            },
-            events,
-        );
+        sys.applyCommand(state, grid, placeCommand(MOCK_NOT_PLACEABLE.id, { x: 0, y: 0 }), events);
 
         const rejected = findEvent(events, EventType.CommandRejected);
         expect(rejected).toBeTruthy();
@@ -59,28 +51,13 @@ describe('CommandSystem (integration)', () => {
         const sys = new CommandSystem();
 
         const placeEvents: Event[] = [];
-        sys.applyCommand(
-            state,
-            grid,
-            {
-                type: CommandType.PlaceStructure,
-                definitionId: MOCK_NOT_DELETABLE.id,
-                coord: { x: 0, y: 0 },
-                rotation: 0,
-            },
-            placeEvents,
-        );
+        sys.applyCommand(state, grid, placeCommand(MOCK_NOT_DELETABLE.id, { x: 0, y: 0 }), placeEvents);
 
         const placed = findEvent(placeEvents, EventType.StructurePlaced);
         expect(placed).toBeTruthy();
 
         const removeEvents: Event[] = [];
-        sys.applyCommand(
-            state,
-            grid,
-            { type: CommandType.RemoveStructure, coord: { x: 0, y: 0 } },
-            removeEvents,
-        );
+        sys.applyCommand(state, grid, removeCommand({ x: 0, y: 0 }), removeEvents);
 
         const rejected = findEvent(removeEvents, EventType.CommandRejected);
         expect(rejected).toBeTruthy();
@@ -93,17 +70,7 @@ describe('CommandSystem (integration)', () => {
         const sys = new CommandSystem();
         const events: Event[] = [];
 
-        sys.applyCommand(
-            state,
-            grid,
-            {
-                type: CommandType.PlaceStructure,
-                definitionId: MOCK_SIMPLE_STRUCTURE.id,
-                coord: { x: 0, y: 0 },
-                rotation: 0,
-            },
-            events,
-        );
+        sys.applyCommand(state, grid, placeCommand(MOCK_SIMPLE_STRUCTURE.id, { x: 0, y: 0 }), events);
 
         const placed = findEvent(events, EventType.StructurePlaced);
         expect(placed).toBeTruthy();
@@ -120,30 +87,10 @@ describe('CommandSystem (integration)', () => {
         const sys = new CommandSystem();
 
         const events1: Event[] = [];
-        sys.applyCommand(
-            state,
-            grid,
-            {
-                type: CommandType.PlaceStructure,
-                definitionId: MOCK_SIMPLE_STRUCTURE.id,
-                coord: { x: 1, y: 1 },
-                rotation: 0,
-            },
-            events1,
-        );
+        sys.applyCommand(state, grid, placeCommand(MOCK_SIMPLE_STRUCTURE.id, { x: 1, y: 1 }), events1);
 
         const events2: Event[] = [];
-        sys.applyCommand(
-            state,
-            grid,
-            {
-                type: CommandType.PlaceStructure,
-                definitionId: MOCK_SIMPLE_STRUCTURE.id,
-                coord: { x: 1, y: 1 },
-                rotation: 0,
-            },
-            events2,
-        );
+        sys.applyCommand(state, grid, placeCommand(MOCK_SIMPLE_STRUCTURE.id, { x: 1, y: 1 }), events2);
 
         const rejected = findEvent(events2, EventType.CommandRejected);
         expect(rejected).toBeTruthy();
@@ -156,7 +103,7 @@ describe('CommandSystem (integration)', () => {
         const sys = new CommandSystem();
         const events: Event[] = [];
 
-        sys.applyCommand(state, grid, { type: CommandType.RemoveStructure, coord: { x: 0, y: 0 } }, events);
+        sys.applyCommand(state, grid, removeCommand({ x: 0, y: 0 }), events);
 
         const rejected = findEvent(events, EventType.CommandRejected);
         expect(rejected).toBeTruthy();
@@ -169,28 +116,13 @@ describe('CommandSystem (integration)', () => {
         const sys = new CommandSystem();
 
         const placeEvents: Event[] = [];
-        sys.applyCommand(
-            state,
-            grid,
-            {
-                type: CommandType.PlaceStructure,
-                definitionId: MOCK_SIMPLE_STRUCTURE.id,
-                coord: { x: 2, y: 2 },
-                rotation: 0,
-            },
-            placeEvents,
-        );
+        sys.applyCommand(state, grid, placeCommand(MOCK_SIMPLE_STRUCTURE.id, { x: 2, y: 2 }), placeEvents);
 
         const placed = findEvent(placeEvents, EventType.StructurePlaced);
         expect(placed).toBeTruthy();
 
         const removeEvents: Event[] = [];
-        sys.applyCommand(
-            state,
-            grid,
-            { type: CommandType.RemoveStructure, coord: { x: 2, y: 2 } },
-            removeEvents,
-        );
+        sys.applyCommand(state, grid, removeCommand({ x: 2, y: 2 }), removeEvents);
 
         const removed = findEvent(removeEvents, EventType.StructureRemoved);
         expect(removed).toBeTruthy();
@@ -206,12 +138,7 @@ describe('CommandSystem (integration)', () => {
         const anchor = { x: 15, y: 0 };
 
         const events: Event[] = [];
-        sys.applyCommand(
-            state,
-            grid,
-            { type: CommandType.PlaceStructure, definitionId: MOCK_MULTITILE.id, coord: anchor, rotation: 0 },
-            events,
-        );
+        sys.applyCommand(state, grid, placeCommand(MOCK_MULTITILE.id, anchor), events);
 
         const placed = findEvent(events, EventType.StructurePlaced);
         expect(placed).toBeTruthy();
@@ -230,7 +157,7 @@ describe('CommandSystem (integration)', () => {
         const sys = new CommandSystem();
         const events: Event[] = [];
 
-        sys.applyCommand(state, grid, { type: CommandType.SetFocusChunk, coord: { x: 5, y: -3 } }, events);
+        sys.applyCommand(state, grid, focusCommand({ x: 5, y: -3 }), events);
 
         expect(state.pendingFocusChunkCoord).toEqual({ x: 5, y: -3 });
     });

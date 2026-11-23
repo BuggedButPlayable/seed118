@@ -1,7 +1,8 @@
 // Adapted from an external snippet; the original source was not recorded.
 
 /**
- * Generates resource clusters based on world tile coordinates and resource definitions.
+ * Places resource clusters (e.g. hydrogen nebulae) deterministically from the world seed.
+ * The world is divided into cells; each cell may hold one cluster with a jittered centre and radius.
  */
 
 import { hash2i, hashToUnitFloat, hashU32 } from '../core/hash2d';
@@ -9,34 +10,43 @@ import type { TileCoord } from '../types/coords';
 import type { ResourceDefinition } from '../types/resource';
 import { RESOURCE_ID_NONE } from './constants';
 
+/** A tile belongs to a cluster once the strongest influence on it reaches this value. */
+const CLUSTER_MEMBERSHIP_THRESHOLD = 0.25;
+
+/** The cell containing the tile and its eight neighbours: a cluster never reaches further. */
+const NEIGHBOUR_CELL_OFFSETS: readonly TileCoord[] = [-1, 0, 1].flatMap((y) =>
+    [-1, 0, 1].map((x) => ({ x, y })),
+);
+
 /**
- * Computes the resource ID of clusters at a given world tile coordinate.
+ * Computes which resource (if any) lies on a world tile.
  * @param worldTile The world tile coordinate.
  * @param worldSeed The seed for the world generation.
  * @param resourceDefinition The definition of the resource.
- * @returns The resource ID or RESOURCE_ID_NONE if no resource is present.
+ * @returns The resource id, or RESOURCE_ID_NONE if no resource is present.
  */
 export const generateResourceId = (
     worldTile: TileCoord,
     worldSeed: number,
     resourceDefinition: ResourceDefinition,
 ): number => {
-    const cx = Math.floor(worldTile.x / resourceDefinition.cellSizeTiles);
-    const cy = Math.floor(worldTile.y / resourceDefinition.cellSizeTiles);
+    const homeCell: TileCoord = {
+        x: Math.floor(worldTile.x / resourceDefinition.cellSizeTiles),
+        y: Math.floor(worldTile.y / resourceDefinition.cellSizeTiles),
+    };
 
-    let best = 0.0;
-    for (let oy = -1; oy <= 1; oy++) {
-        for (let ox = -1; ox <= 1; ox++) {
-            const infl = clusterInfluenceFromCell(
-                { x: cx + ox, y: cy + oy },
+    const strongestInfluence = Math.max(
+        ...NEIGHBOUR_CELL_OFFSETS.map((offset) =>
+            clusterInfluenceFromCell(
+                { x: homeCell.x + offset.x, y: homeCell.y + offset.y },
                 worldTile,
                 worldSeed,
                 resourceDefinition,
-            );
-            if (infl > best) best = infl;
-        }
-    }
-    return best >= 0.25 ? resourceDefinition.id : RESOURCE_ID_NONE;
+            ),
+        ),
+    );
+
+    return strongestInfluence >= CLUSTER_MEMBERSHIP_THRESHOLD ? resourceDefinition.id : RESOURCE_ID_NONE;
 };
 
 /**
@@ -45,7 +55,7 @@ export const generateResourceId = (
  * @param worldTile The world tile coordinate.
  * @param worldSeed The seed for the world generation.
  * @param resourceDefinition The definition of the resource.
- * @returns The influence value in the range [0, 1].
+ * @returns The influence in [0, 1]: 1 at the cluster centre, 0 outside its radius.
  */
 const clusterInfluenceFromCell = (
     cell: TileCoord,
@@ -53,28 +63,27 @@ const clusterInfluenceFromCell = (
     worldSeed: number,
     resourceDefinition: ResourceDefinition,
 ): number => {
-    const cellX = cell.x;
-    const cellY = cell.y;
     const seed = (worldSeed ^ resourceDefinition.seedSalt) >>> 0;
-    const h = hash2i(cellX, cellY, seed);
+    const cellHash = hash2i(cell.x, cell.y, seed);
 
-    if (hashToUnitFloat(h) > resourceDefinition.spawnProb) return 0.0;
+    if (hashToUnitFloat(cellHash) > resourceDefinition.spawnProb) {
+        return 0;
+    }
 
-    const jx = (hashU32(h ^ resourceDefinition.jitterSaltX) % resourceDefinition.cellSizeTiles) | 0;
-    const jy = (hashU32(h ^ resourceDefinition.jitterSaltY) % resourceDefinition.cellSizeTiles) | 0;
+    const cellSize = resourceDefinition.cellSizeTiles;
+    const centre: TileCoord = {
+        x: cell.x * cellSize + ((hashU32(cellHash ^ resourceDefinition.jitterSaltX) % cellSize) | 0),
+        y: cell.y * cellSize + ((hashU32(cellHash ^ resourceDefinition.jitterSaltY) % cellSize) | 0),
+    };
 
-    const centerX = cellX * resourceDefinition.cellSizeTiles + jx;
-    const centerY = cellY * resourceDefinition.cellSizeTiles + jy;
+    const radiusSpan = Math.max(1, resourceDefinition.radiusMax - resourceDefinition.radiusMin + 1);
+    const radius =
+        resourceDefinition.radiusMin + ((hashU32(cellHash ^ resourceDefinition.radiusSalt) % radiusSpan) | 0);
+    const deltaX = worldTile.x - centre.x;
+    const deltaY = worldTile.y - centre.y;
+    // Math.sqrt is exactly rounded on every engine; Math.hypot is not, which would break determinism.
+    const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
 
-    const rSpan = Math.max(1, resourceDefinition.radiusMax - resourceDefinition.radiusMin + 1);
-    const radius = resourceDefinition.radiusMin + ((hashU32(h ^ resourceDefinition.radiusSalt) % rSpan) | 0);
-    const dx = worldTile.x - centerX;
-    const dy = worldTile.y - centerY;
-    const dist = Math.sqrt(dx * dx + dy * dy);
-
-    const rr = radius + resourceDefinition.edgeSoftness;
-    const t = 1.0 - dist / rr;
-    if (t <= 0.0) return 0.0;
-
-    return t * t;
+    const falloff = 1 - distance / (radius + resourceDefinition.edgeSoftness);
+    return falloff > 0 ? falloff * falloff : 0;
 };

@@ -10,6 +10,6 @@ describe('@seed118/sim public API', () => {
 
         sim.tick([{ type: CommandType.SetFocusChunk, coord: { x: 0, y: 0 } }], events);
 
-        expect(events.some((e) => e.type === EventType.TickAdvanced)).toBe(true);
+        expect(events.some((event) => event.type === EventType.TickAdvanced)).toBe(true);
     });
 });

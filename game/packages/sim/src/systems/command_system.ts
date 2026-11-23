@@ -8,6 +8,8 @@ import type { Command } from '../types/commands';
 import { EventType, RejectReason } from '../types/events';
 import type { Event } from '../types/events';
 
+const QUARTER_TURNS_PER_REVOLUTION = 4;
+
 type PlaceStructureCommand = Extract<Command, { type: CommandType.PlaceStructure }>;
 type RemoveStructureCommand = Extract<Command, { type: CommandType.RemoveStructure }>;
 
@@ -145,5 +147,5 @@ function rejected(command: Command, reason: RejectReason, details: string): Even
 }
 
 function isValidRotation(rotation: number): boolean {
-    return Number.isInteger(rotation) && rotation >= 0 && rotation <= 3;
+    return Number.isInteger(rotation) && rotation >= 0 && rotation < QUARTER_TURNS_PER_REVOLUTION;
 }
