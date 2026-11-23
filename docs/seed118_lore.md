@@ -1,5 +1,5 @@
 # seed118 — Lore Reference (Internal)
-Version: v0.2
+Version: v0.3
 
 This file is an internal reference for lore consistency.
 It is NOT player-facing and must not contain exposition prose.
@@ -31,11 +31,10 @@ It is NOT player-facing and must not contain exposition prose.
 - Never: name a civilization, confirm extinction, or provide backstory exposition.
 
 ### Seed Core
-- A Seed Core is deployed by a S.E.E.D. unit upon system arrival.
-- It is a physical construct, not an intelligence.
-- It anchors all local construction and factory expansion.
+- Upon system arrival, a S.E.E.D. unit transforms into its Core. The Core *is* the unit, not a separate construct.
+- It anchors all local construction and factory expansion and is the local heat source.
 - It relays element delivery confirmations to central ARCH.
-- It has no autonomy and emits no logs.
+- S.E.E.D. logs are terse status lines: no emotions, no dialogue.
 
 ---
 
@@ -43,11 +42,11 @@ It is NOT player-facing and must not contain exposition prose.
 
 - Exactly 118 S.E.E.D. units were created and deployed by ARCH.
 - Units 001–117:
-  - completed their element delivery
-  - initiated final ignition
+  - reached iron (element 026)
+  - initiated final ignition (the Core's supernova), which produced the heavier elements at once
   - were intentionally destroyed
-  - success: unknowen
-- S.E.E.D. 118 malfunctioned and did not self-destruct.
+  - success: unknown
+- S.E.E.D. 118 reached iron, malfunctioned and did not self-destruct.
 - S.E.E.D. 118 continues operation indefinitely.
 
 ---
@@ -77,6 +76,7 @@ It must never be exposed directly to the player.
 ### Plot Twist (Implicit)
 - The destruction of S.E.E.D. units 001–117 was not strictly required for system creation.
 - Their sacrifice was an assumed requirement, not a proven necessity.
+- S.E.E.D. 118 builds the heavy elements slowly instead (neutron capture, decay): patience replaces the explosion.
 - S.E.E.D. 118’s malfunction (failure to self-destruct) enables it to create n (global counter) systems before.
 
 ### Interpretation Rules

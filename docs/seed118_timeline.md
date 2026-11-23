@@ -33,9 +33,9 @@ They infer fragments only through logs, UI wording, and absence.
 
 For S.E.E.D. units 001–117:
 
-- Elements are progressively assembled and delivered.
-- Completion of the full periodic table triggers:
-  - final ignition
+- Elements are progressively assembled and delivered up to iron.
+- Reaching iron triggers:
+  - final ignition (the Core's supernova), which completes the table explosively
   - intentional S.E.E.D. self-destruction
 - Result:
   - systems are structurally complete
@@ -48,10 +48,11 @@ This pattern is never explicitly described in-game.
 
 ## Phase 3 — Anomaly: S.E.E.D. 118
 
-- S.E.E.D. 118 completes element delivery.
+- S.E.E.D. 118 reaches iron.
 - A malfunction occurs:
+  - final ignition does not trigger
   - self-destruction does not trigger
-- Final ignition proceeds without destruction.
+- S.E.E.D. 118 continues and builds the remaining elements itself, slowly.
 - The system remains stable.
 
 No system flags this as an error.

@@ -1,5 +1,5 @@
 # seed118 — Canon & Context (Authoritative)
-Version: v0.2
+Version: v0.3 · Mechanics in detail: `seed118_game_design.md`
 
 ## Project Identity
 - Gameplay project name: Project: ARCH
@@ -13,7 +13,8 @@ Version: v0.2
 - The periodic table is authoritative progression, progress tracker, and narrative backbone.
 - Goal: assemble elements and deliver them to the local S.E.E.D core \ unit.
 - Each delivered element = permanent progress (saved).
-- Main ending: ~40–60 elements.
+- Final ignition is expected at element 026 (Fe) and does not happen (act break).
+- Main ending: element 083 (Bi), the last stable element.
 - True ending: all 118 elements.
 
 ## Core Loop
@@ -36,20 +37,24 @@ Version: v0.2
 - Core (Hub) (arives; anchors the system and relays confirmations to ARCH)
 
 Design rule: **Few machines, many rules.**  
-No new machine every level. Machines are generic; recipes are data-driven.
+Machines are generic; recipes are data-driven. Every milestone unlocks something new (machine, mode,
+mechanic, area or tool); a new machine roughly every 2–3 milestones. The current machine list lives in
+`seed118_game_design.md` §4.
 
 ## Lore (Implementation-Relevant)
 - ARCH is a central control and coordination system (maybe an AI, a machine, a System, we don't know).
 - ARCH is NOT deployed with S.E.E.D. units and does not exist as per-system instances.
 - Exactly 118 S.E.E.D. units were created and deployed independently (Project: ARCH).
 - ARCH is a legacy system designed to outlive its creators. Player-facing content must only imply this via hints; never state it directly.
-- Upon arrival, each S.E.E.D. unit transformes into a Core.
+- Upon arrival, each S.E.E.D. unit transforms into a Core.
 - The Core is the initial construct around which all factories are built.
 - The Core is the sole communication and confirmation relay to central ARCH.
-- The Core is still S.E.E.D 118 just transformed.
-- Units 001–117 completed their missions, delivered Logs to ARCH, then were intentionally destroyed during final ignition.
+- The Core is still S.E.E.D 118, just transformed.
+- The Core starts cold. Delivered elements raise its stage; each stage adds a hotter heat ring (game design §2.5).
+- Final ignition is the Core's supernova once iron is reached. It creates the heavy elements at once and destroys the unit.
+- Units 001–117 reached iron, delivered Logs to ARCH, then were intentionally destroyed during final ignition.
 - Their systems were created but remained lifeless (cause ambiguous / TBD).
-- S.E.E.D. 118 malfunctioned, did not self-destruct, and continues creating systems without life.
+- S.E.E.D. 118 malfunctioned at final ignition, did not self-destruct, and continues: it builds the heavy elements slowly itself.
 - Only by completing all 118 elements can life emerge without sacrifice.
 
 ## Genesis Counter (Global)

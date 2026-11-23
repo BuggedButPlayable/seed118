@@ -3,16 +3,20 @@
 This document defines the non-negotiable engineering constraints for S.E.E.D 118.
 If a change violates this contract, the change must be rejected or this file must be updated explicitly.
 
+Version: v2.0 (TypeScript) · Changes from v1 (Godot): engine, API names, enforcement section.
+
 ## 0. Scope & Authority
 
 This document is the single authoritative architecture and implementation contract for S.E.E.D 118.
 All code must comply with the rules defined here.
 `seed118_context.md`, `seed118_lore.md`, and `seed118_timeline.md` remain authoritative for their respective domains.
+`seed118_coding_rules.md` defines how code is written and is equally binding.
 Any architectural change requires an explicit update to this file.
 
 ## 1. Core Principles
 
-- Godot 4.x
+- TypeScript, browser-first (later desktop via a wrapper such as Tauri/Electron).
+- Rendering with PixiJS; the simulation is a headless TypeScript package (`@seed118/sim`).
 - Deterministic fixed-step simulation.
 - Simulation owns all world state.
 - View is read-only and may never mutate world state.
@@ -20,7 +24,7 @@ Any architectural change requires an explicit update to this file.
 - 2D, top-down
 - Data-driven design
 - Composition over inheritance
-- Shallow scene trees
+- The render tree is a projection of simulation snapshots, never a source of truth
 
 ## 2. Time and Determinism
 
@@ -29,6 +33,9 @@ Any architectural change requires an explicit update to this file.
 - Given the same initial state and the same command stream, the resulting world state must be identical.
 
 ## 3. Layer Boundaries
+
+Packages map to layers: `sim` = Simulation, `render` = View, `ui` = UI, `runtime` = loop/input/platform
+glue. Allowed imports are enforced by ESLint (see `seed118_coding_rules.md` §2.1).
 
 ### Simulation (Authoritative)
 Owns:
@@ -60,14 +67,14 @@ Must not:
 ## 4. Design Constraints
 
 - Fixed-step simulation (no frame-dependent logic)
-- Simulation logic operates on data, not nodes
+- Simulation logic operates on plain data, not on render objects
 - Rendering may interpolate visually but must not affect logic
-- Save data, not nodes
+- Save data, not render objects
 
 ## 5. Simulation Model
 
 - All transport and processing happens in simulation ticks
-- Items and entities are logical data (IDs, structs), not scene nodes
+- Items and entities are logical data (IDs, plain objects, typed arrays), not render objects
 - Derived state must be computed, not stored
 - Item movement between entities is performed by a dedicated simulation step and must not be embedded implicitly in individual machine logic.
 
@@ -77,12 +84,11 @@ All item transfers are defined in terms of **ports on tile edges**.
 
 - Each entity exposes zero or more ports on its footprint tiles.
 - Each port is associated with exactly one tile edge (N, E, S, W).
-- Each port has one of three directions:
-  - NONE (no interaction)
-  - IN  (may receive items)
-  - OUT (may provide items)
+- Each port has a direction: `'input'` (may receive items) or `'output'` (may provide items).
+  An edge without a port does not interact.
 
-Ports are defined **data-driven** in `EntityDefinitions` and are rotated together with the entity footprint.
+Ports are defined **data-driven** in the structure definitions (`packages/sim/src/defs/`) and are rotated
+together with the structure footprint.
 
 A transfer between two neighboring tiles is only considered if:
 - The source tile exposes an OUT port on the shared edge
@@ -110,8 +116,9 @@ without coupling transfer logic to sender-side machine knowledge.
 
 ### Commands
 - Commands describe intent only.
-- Commands must use canonical keys defined in `SimCommandSchema`.
-- A command may be rejected; rejection must include `command_type` and `reason`.
+- Commands are the `Command` union in `packages/sim/src/types/commands.ts`.
+- A command may be rejected; the rejection event carries the full `rejectedCommand` (and with it its
+  type) plus a `reason`.
 
 ### Events
 - Events describe the result of applying commands or simulation progress.
@@ -126,8 +133,9 @@ without coupling transfer logic to sender-side machine knowledge.
 
 ## 8. Entity Footprints (Multi-tile)
 
-- Each entity type has a footprint (tile offsets) defined in `EntityDefinitions`.
-- `EntityDefinitions` is the single source of truth for footprints (simulation and preview must use it).
+- Each structure type has a footprint (tile offsets) defined in its `StructureDefinition`.
+- The structure definitions are the single source of truth for footprints. Simulation and preview both
+  use `rotateOffsets` / `computeFootprintTiles` from `@seed118/sim`.
 - Placement validity checks all footprint tiles.
 - Removal clears all footprint tiles (clicking any occupied tile removes the full entity).
 - Footprints are rotated using the same rule as preview: rotating around the anchor. 
@@ -164,11 +172,12 @@ Load rules:
 
 ## 11. Public Simulation API Freeze
 
-Gameplay/UI/View may only rely on these stable entry points:
-- `SimulationHost.enqueue_command(command)`
-- `SimWorld.tick(commands, out_events)`
-- Snapshot getters (resource and occupancy)
-- Save/Load entry points (serialize/apply)
+Gameplay/UI/View may only rely on what `packages/sim/src/index.ts` exports, in particular:
+- `SimCommandQueue.enqueueCommand(command)` / `drainCommands()`
+- `SimWorld.tick(commands, outEvents)`
+- Snapshot getters on `SimWorld` (`getStructures`, `getStructureIdAt`, `getResourceIdAt`, `getTickIndex`, `getWorldSeed`)
+- Save/Load entry points (`saveV1`, `loadV1`)
+- Definitions and shared geometry (registries, `rotateOffsets`, `computeFootprintTiles`)
 
 Anything else is internal and must not be called across layers.
 
@@ -194,25 +203,12 @@ and does not relax determinism or save/load constraints.
 
 - A headless determinism smoke test must exist.
 - A Save→Load→Hash determinism test must exist.
+- Both live in `packages/sim/test/integration/determinism/` and run on every commit and in CI.
 - Golden hashes may be used as regression guards; updating them is an explicit action.
 
-## Appendix A: Clean Code Guidelines (Non-binding)
+## Appendix A: Code Style
 
-The following guidelines are recommended for maintainability and readability,
-but they are not part of the architectural contract and may not be enforced by reviews.
-
-- Prefer simple, explicit code over clever abstractions
-- Be consistent in naming and structure
-- Avoid hidden side effects
-- Remove dead code aggressively
-
----
-
-## Note on Deprecated Documents
-
-`seed118_implementation.md` is deprecated.
-Its relevant constraints have been merged into this document.
-It should no longer be treated as authoritative.
+Code style is binding and defined in `seed118_coding_rules.md`.
 
 ---
 
@@ -224,10 +220,10 @@ before gameplay implementation begins.
 The following rules are now explicitly binding:
 
 ### Command Rejection Contract
-- Any rejected command **must** emit the canonical event `EVENT_COMMAND_REJECTED`.
+- Any rejected command **must** emit the canonical event `EventType.CommandRejected`.
 - The rejection payload **must** include:
-  - `command_type`
-  - `reason`
+  - `rejectedCommand` (which carries the command type)
+  - `reason` (`RejectReason`)
 - Optional diagnostic data may be provided via `details`.
 - No ad-hoc rejection events or free-form rejection payloads are permitted.
 
@@ -237,7 +233,7 @@ The following rules are now explicitly binding:
   - Save → Load → Hash determinism test
 - Gameplay code must not introduce:
   - Non-seeded randomness
-  - Frame-time (`delta`) dependent logic
+  - Frame-time (`delta`) dependent logic, `Date`, timers
   - External time or OS state dependencies
 
 ### Rotation and Placement Policy (Final)
