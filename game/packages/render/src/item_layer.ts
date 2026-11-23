@@ -5,9 +5,9 @@ import { Graphics } from 'pixi.js';
 import { crossingProgress, itemPosition } from './item_motion';
 import { itemColor } from './palette';
 import type { SimView } from './sim_view';
+import { tileCenter } from './tile_geometry';
 
 const ITEM_RADIUS = 0.17;
-const HALF_TILE = 0.5;
 
 /** Items held by structures, redrawn every frame from the snapshot and moved smoothly between ticks. */
 export class ItemLayer {
@@ -15,9 +15,8 @@ export class ItemLayer {
 
     public update(view: SimView, stepProgress: number): void {
         this.graphics.clear();
-        const structures = new Map(view.getStructures().map((structure) => [structure.id, structure]));
         for (const slot of view.getItemSlots()) {
-            const holder = structures.get(slot.structureId);
+            const holder = view.getStructure(slot.structureId);
             if (holder) {
                 this.drawItem(slot, holder, stepProgress);
             }
@@ -32,7 +31,7 @@ export class ItemLayer {
             transitTicks === undefined
                 ? null
                 : itemPosition(ports, crossingProgress(slot.ticksRemaining, transitTicks, stepProgress));
-        const center = moving ?? { x: holder.position.x + HALF_TILE, y: holder.position.y + HALF_TILE };
+        const center = moving ?? tileCenter(holder.position);
         this.graphics.circle(center.x, center.y, ITEM_RADIUS).fill(itemColor(slot.itemKey));
     }
 }

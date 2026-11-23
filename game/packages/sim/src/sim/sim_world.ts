@@ -19,6 +19,7 @@ import { CommandType } from '../types/commands';
 import type { Command } from '../types/commands';
 import { EventType } from '../types/events';
 import type { Event } from '../types/events';
+import type { StructureId } from '../types/ids';
 import type { ItemKey, ItemSlotSnapshot } from '../types/item';
 import type { StructureRecord } from '../types/structure';
 
@@ -110,6 +111,11 @@ export class SimWorld {
 
     public getTickIndex(): number {
         return this.worldState.tickIndex;
+    }
+
+    /** One structure by id, or null if there is none. */
+    public getStructure(structureId: StructureId): Readonly<StructureRecord> | null {
+        return this.worldState.structureStore.getStructureById(structureId);
     }
 
     /** All structures, sorted by id. */

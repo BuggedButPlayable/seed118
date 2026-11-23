@@ -1,16 +1,18 @@
 import { EventType, ITEM_DEFINITIONS, getItemDefinitionByKey } from '@seed118/sim';
 import type { Event, ItemKey, SimWorld } from '@seed118/sim';
 
+import { BORDER_COLOR, FONT, PANEL_COLOR, TEXT_COLOR } from './dom_style';
+
 const COUNTER_STYLE = [
     'position:fixed',
     'left:16px',
     'top:16px',
     'padding:8px 12px',
     'border-radius:6px',
-    'border:1px solid #2c3854',
-    'background:#0e1422cc',
-    'font:14px system-ui,sans-serif',
-    'color:#c8d2e8',
+    `border:1px solid ${BORDER_COLOR}`,
+    `background:${PANEL_COLOR}`,
+    `font:${FONT}`,
+    `color:${TEXT_COLOR}`,
     'white-space:pre',
 ].join(';');
 

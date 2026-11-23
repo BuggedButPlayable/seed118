@@ -37,6 +37,8 @@ describe('A new world', () => {
         expect(sim.getStructures()).toMatchObject([{ definitionId: CORE.id, position: { x: 0, y: 0 } }]);
         expect(sim.getStructureIdAt({ x: 1, y: 1 })).toBe(sim.getStructures()[0]!.id);
         expect(sim.getDeliveredCount('hydrogen')).toBe(0);
+        expect(sim.getStructure(sim.getStructures()[0]!.id)).toMatchObject({ definitionId: CORE.id });
+        expect(sim.getStructure(999)).toBeNull();
     });
 
     it('does not let the player remove the Core', () => {

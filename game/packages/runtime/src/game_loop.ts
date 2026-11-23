@@ -1,4 +1,4 @@
-import { CommandType, SIM_TICKS_PER_SECOND, tileToChunk } from '@seed118/sim';
+import { CommandType, SIM_TICKS_PER_SECOND, isSameCoord, tileToChunk } from '@seed118/sim';
 import type { ChunkCoord, Event, SimCommandQueue, SimWorld } from '@seed118/sim';
 import type { BuildPreview, Camera, WorldRenderer } from '@seed118/render';
 import type { DeliveryCounter } from '@seed118/ui';
@@ -79,7 +79,7 @@ export class GameLoop {
     /** Asks the simulation to generate chunks around the camera whenever it enters a new chunk. */
     private followCamera(): void {
         const chunk = tileToChunk(this.options.camera.centerTile());
-        if (this.focusChunk?.x === chunk.x && this.focusChunk.y === chunk.y) {
+        if (this.focusChunk && isSameCoord(this.focusChunk, chunk)) {
             return;
         }
         this.focusChunk = chunk;

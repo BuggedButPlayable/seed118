@@ -23,6 +23,10 @@ export class ToolState {
         return this.previewRotation;
     }
 
+    public isActive(tool: BuildTool): boolean {
+        return isSameTool(tool, this.selectedTool);
+    }
+
     /** Selects a tool; selecting the active place or remove tool again puts the tool away. */
     public toggle(tool: BuildTool): void {
         this.selectedTool = isSameTool(tool, this.selectedTool) ? { kind: 'none' } : tool;

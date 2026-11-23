@@ -1,5 +1,6 @@
 import { getStructureDefinitionByKey } from '@seed118/sim';
 
+import { ACTIVE_BORDER_COLOR, BORDER_COLOR, FONT, TEXT_COLOR, createButton } from './dom_style';
 import type { BuildTool, ToolState } from './tool_state';
 
 interface BuildBarEntry {
@@ -34,13 +35,9 @@ const BAR_STYLE = [
     'display:flex',
     'gap:8px',
     'align-items:center',
-    'font:14px system-ui,sans-serif',
-    'color:#c8d2e8',
+    `font:${FONT}`,
+    `color:${TEXT_COLOR}`,
 ].join(';');
-const BUTTON_STYLE =
-    'padding:8px 14px;border-radius:6px;border:1px solid #2c3854;background:#0e1422;color:inherit;cursor:pointer';
-const ACTIVE_BORDER = '#6f9bff';
-const IDLE_BORDER = '#2c3854';
 
 /**
  * Minimal build bar (plain DOM over the canvas): one button per tool, hotkeys 1/2/X,
@@ -66,20 +63,16 @@ export class BuildBar {
     }
 
     private createButton(entry: BuildBarEntry): HTMLButtonElement {
-        const button = document.createElement('button');
-        button.type = 'button';
-        button.textContent = `${entry.label} [${entry.hotkey}]`;
-        button.style.cssText = BUTTON_STYLE;
-        button.addEventListener('click', () => this.tools.toggle(entry.tool()));
+        const button = createButton(`${entry.label} [${entry.hotkey}]`, () =>
+            this.tools.toggle(entry.tool()),
+        );
         this.buttons.set(entry, button);
         return button;
     }
 
     private highlightActive(): void {
-        const active = this.tools.tool;
         for (const [entry, button] of this.buttons) {
-            const isActive = JSON.stringify(entry.tool()) === JSON.stringify(active);
-            button.style.borderColor = isActive ? ACTIVE_BORDER : IDLE_BORDER;
+            button.style.borderColor = this.tools.isActive(entry.tool()) ? ACTIVE_BORDER_COLOR : BORDER_COLOR;
         }
     }
 

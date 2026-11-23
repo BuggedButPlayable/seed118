@@ -1,4 +1,5 @@
 import type { BuildPreview, Camera, ViewportSize } from '@seed118/render';
+import { isSameCoord } from '@seed118/sim';
 import type { SimCommandQueue, TileCoord } from '@seed118/sim';
 import type { ToolState } from '@seed118/ui';
 
@@ -83,7 +84,7 @@ export class BuildInput {
 
     /** Applies the tool once per tile, so a drag does not repeat commands on the same tile. */
     private applyToolAt(tile: TileCoord): void {
-        if (this.lastPaintedTile?.x === tile.x && this.lastPaintedTile.y === tile.y) {
+        if (this.lastPaintedTile && isSameCoord(this.lastPaintedTile, tile)) {
             return;
         }
         this.lastPaintedTile = tile;

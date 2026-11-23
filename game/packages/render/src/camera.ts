@@ -5,6 +5,8 @@
 
 import type { TileCoord } from '@seed118/sim';
 
+import type { WorldPoint } from './tile_geometry';
+
 export interface ScreenPoint {
     x: number;
     y: number;
@@ -25,7 +27,7 @@ export class Camera {
     private centerY: number;
     private zoomLevel = DEFAULT_ZOOM;
 
-    constructor(center: ScreenPoint) {
+    constructor(center: WorldPoint) {
         this.centerX = center.x;
         this.centerY = center.y;
     }
@@ -35,7 +37,7 @@ export class Camera {
     }
 
     /** The world point in the middle of the screen, in tiles. */
-    public get center(): ScreenPoint {
+    public get center(): WorldPoint {
         return { x: this.centerX, y: this.centerY };
     }
 
@@ -60,7 +62,7 @@ export class Camera {
     }
 
     /** Converts a screen pixel to a world point in tiles (fractional). */
-    public screenToWorld(point: ScreenPoint, viewport: ViewportSize): ScreenPoint {
+    public screenToWorld(point: ScreenPoint, viewport: ViewportSize): WorldPoint {
         return {
             x: this.centerX + (point.x - viewport.width / 2) / this.zoomLevel,
             y: this.centerY + (point.y - viewport.height / 2) / this.zoomLevel,

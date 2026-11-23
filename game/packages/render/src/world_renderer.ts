@@ -1,4 +1,4 @@
-import { EventType } from '@seed118/sim';
+import { EventType, getStructureDefinitionByKey } from '@seed118/sim';
 import type { Event } from '@seed118/sim';
 import { Application, Container } from 'pixi.js';
 
@@ -77,7 +77,12 @@ export class WorldRenderer {
         const { camera } = frame;
         this.itemLayer.update(view, frame.stepProgress);
         this.previewLayer.update(view, frame.preview);
-        const origin = camera.worldOrigin(this.viewportSize());
+        const viewport = this.viewportSize();
+        this.chunkLayer.cull(
+            camera.screenToWorld({ x: 0, y: 0 }, viewport),
+            camera.screenToWorld({ x: viewport.width, y: viewport.height }, viewport),
+        );
+        const origin = camera.worldOrigin(viewport);
         this.world.position.set(origin.x, origin.y);
         this.world.scale.set(camera.zoom);
         this.app.render();
@@ -89,7 +94,8 @@ export class WorldRenderer {
                 this.chunkLayer.drawChunk(view, event.coord);
                 return;
             case EventType.StructurePlaced:
-                this.structureLayer.addByKey(event.structureId, event.structureKey, {
+                this.structureLayer.add(event.structureId, {
+                    definition: getStructureDefinitionByKey(event.structureKey),
                     anchor: event.structureCoord,
                     rotation: event.structureRotation,
                 });

@@ -7,7 +7,13 @@ export { SimWorld } from './sim/sim_world';
 export { SimCommandQueue } from './sim/sim_command_queue';
 export type { PlacementRejection, PlacementRequest } from './systems/placement_rules';
 
-export { CHUNK_SIZE, RESOURCE_ID_NONE, SIM_TICKS_PER_SECOND, STRUCTURE_ID_NONE } from './core/constants';
+export {
+    CHUNK_SIZE,
+    DEFAULT_WORLD_SEED,
+    RESOURCE_ID_NONE,
+    SIM_TICKS_PER_SECOND,
+    STRUCTURE_ID_NONE,
+} from './core/constants';
 export {
     STRUCTURE_DEFINITIONS,
     getStructureDefinitionById,
@@ -18,9 +24,12 @@ export { ITEM_DEFINITIONS, getItemDefinitionById, getItemDefinitionByKey } from 
 
 // Shared geometry: preview and simulation must use the same footprint rules (architecture §8)
 export {
+    chunkKey,
+    chunkToTileOrigin,
     computeFootprintTiles,
     computePlacedFootprint,
     computeWorldPorts,
+    isSameCoord,
     neighbourAcross,
     oppositeSide,
     rotateOffsets,

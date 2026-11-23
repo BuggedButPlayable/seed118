@@ -1,4 +1,4 @@
-import { getStructureDefinitionById, getStructureDefinitionByKey } from '@seed118/sim';
+import { getStructureDefinitionById } from '@seed118/sim';
 import type { StructureId } from '@seed118/sim';
 import { Container, Graphics } from 'pixi.js';
 
@@ -18,11 +18,6 @@ export class StructureLayer {
         drawStructure(graphics, shape, structureStyle(shape.definition.key));
         this.container.addChild(graphics);
         this.graphicsById.set(structureId, graphics);
-    }
-
-    /** Convenience for events, which name the structure by key. */
-    public addByKey(structureId: StructureId, key: string, shape: Omit<PlacedShape, 'definition'>): void {
-        this.add(structureId, { ...shape, definition: getStructureDefinitionByKey(key) });
     }
 
     public remove(structureId: StructureId): void {

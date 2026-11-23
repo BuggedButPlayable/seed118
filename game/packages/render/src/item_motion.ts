@@ -2,12 +2,10 @@
  * Where an item is drawn inside its holder. Pure math, so the interpolation can be tested without PixiJS.
  */
 
-import { neighbourAcross } from '@seed118/sim';
-import type { Side, StructurePort } from '@seed118/sim';
+import type { StructurePort } from '@seed118/sim';
 
-import type { ScreenPoint } from './camera';
-
-const HALF_TILE = 0.5;
+import { edgeMidpoint } from './tile_geometry';
+import type { WorldPoint } from './tile_geometry';
 
 /**
  * How far an item has crossed its holder, 0 (just entered) .. 1 (at the exit).
@@ -24,7 +22,7 @@ export function crossingProgress(ticksRemaining: number, transitTicks: number, s
  * Point between the input edge and the output edge of a one-tile holder (a belt).
  * Without both ports the item sits in the middle of the anchor tile.
  */
-export function itemPosition(ports: readonly StructurePort[], progress: number): ScreenPoint | null {
+export function itemPosition(ports: readonly StructurePort[], progress: number): WorldPoint | null {
     const input = ports.find((port) => port.type === 'input');
     const output = ports.find((port) => port.type === 'output');
     if (!input || !output) {
@@ -33,9 +31,4 @@ export function itemPosition(ports: readonly StructurePort[], progress: number):
     const start = edgeMidpoint(input.tile, input.side);
     const end = edgeMidpoint(output.tile, output.side);
     return { x: start.x + (end.x - start.x) * progress, y: start.y + (end.y - start.y) * progress };
-}
-
-function edgeMidpoint(tile: { x: number; y: number }, side: Side): ScreenPoint {
-    const step = neighbourAcross({ x: 0, y: 0 }, side);
-    return { x: tile.x + HALF_TILE + step.x * HALF_TILE, y: tile.y + HALF_TILE + step.y * HALF_TILE };
 }

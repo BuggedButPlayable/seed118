@@ -1,4 +1,4 @@
-import { STRUCTURE_ID_NONE, computePlacedFootprint, getStructureDefinitionById } from '@seed118/sim';
+import { computePlacedFootprint, getStructureDefinitionById } from '@seed118/sim';
 import type { PlacementRequest, TileCoord } from '@seed118/sim';
 import { Graphics } from 'pixi.js';
 
@@ -45,10 +45,9 @@ export class PreviewLayer {
     }
 
     private drawRemoval(view: SimView, tile: TileCoord): void {
-        const structureId = view.getStructureIdAt(tile);
-        const structure = view.getStructures().find((candidate) => candidate.id === structureId);
+        const structure = view.getStructure(view.getStructureIdAt(tile));
         const style = { fill: INVALID_PREVIEW_COLOR, stroke: INVALID_PREVIEW_COLOR };
-        if (structureId === STRUCTURE_ID_NONE || !structure) {
+        if (!structure) {
             drawFootprintBox(this.graphics, [tile], style, GHOST_ALPHA / 2);
             return;
         }

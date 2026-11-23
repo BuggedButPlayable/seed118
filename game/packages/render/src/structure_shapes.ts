@@ -1,9 +1,10 @@
-import { computePlacedFootprint, computeWorldPorts, neighbourAcross } from '@seed118/sim';
+import { computePlacedFootprint, computeWorldPorts } from '@seed118/sim';
 import type { Rotation, StructureDefinition, StructurePort, TileCoord } from '@seed118/sim';
 import type { Graphics } from 'pixi.js';
 
 import { INPUT_PORT_COLOR, OUTPUT_PORT_COLOR } from './palette';
 import type { BodyStyle } from './palette';
+import { sideStep, tileCenter } from './tile_geometry';
 
 /** Gap between a body and its tile edges, in tiles, so neighbouring structures stay apart. */
 const BODY_INSET = 0.1;
@@ -13,7 +14,6 @@ const BODY_STROKE_WIDTH = 0.06;
 const ARROW_INNER = 0.22;
 const ARROW_OUTER = 0.46;
 const ARROW_HALF_WIDTH = 0.16;
-const HALF_TILE = 0.5;
 
 export interface PlacedShape {
     definition: StructureDefinition;
@@ -54,13 +54,12 @@ export function drawFootprintBox(
 
 /** Outputs point out of the tile edge, inputs point into it. */
 function drawPortArrow(graphics: Graphics, port: StructurePort, alpha: number): void {
-    const step = neighbourAcross({ x: 0, y: 0 }, port.side);
+    const step = sideStep(port.side);
     const across = { x: -step.y, y: step.x };
     const isOutput = port.type === 'output';
     const tip = isOutput ? ARROW_OUTER : ARROW_INNER;
     const base = isOutput ? ARROW_INNER : ARROW_OUTER;
-    const centerX = port.tile.x + HALF_TILE;
-    const centerY = port.tile.y + HALF_TILE;
+    const { x: centerX, y: centerY } = tileCenter(port.tile);
     graphics
         .poly([
             centerX + step.x * tip,

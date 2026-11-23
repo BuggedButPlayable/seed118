@@ -10,6 +10,7 @@ export type SimView = Pick<
     | 'getChunkCoords'
     | 'getItemSlots'
     | 'getResourceIdAt'
+    | 'getStructure'
     | 'getStructureIdAt'
     | 'getStructures'
 >;

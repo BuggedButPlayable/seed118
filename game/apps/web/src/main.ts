@@ -3,7 +3,6 @@
  */
 
 import { Camera, WorldRenderer } from '@seed118/render';
-import type { ViewportSize } from '@seed118/render';
 import {
     BROKEN_SAVE_STORAGE_KEY,
     BuildInput,
@@ -12,11 +11,9 @@ import {
     SaveStorage,
     startAutosave,
 } from '@seed118/runtime';
-import { SimCommandQueue, SimWorld } from '@seed118/sim';
+import { DEFAULT_WORLD_SEED, SimCommandQueue, SimWorld } from '@seed118/sim';
 import { BuildBar, DeliveryCounter, ToolState, WorldMenu } from '@seed118/ui';
 
-/** M1 always starts the same world; picking a seed comes later. */
-const NEW_WORLD_SEED = 118;
 /** Middle of the 2×2 Core at the origin. */
 const START_VIEW_CENTER = { x: 1, y: 1 };
 
@@ -24,8 +21,9 @@ async function startGame(host: HTMLElement): Promise<void> {
     const sim = new SimWorld();
     const saves = new SaveStorage(window.localStorage);
     const restored = saves.restoreInto(sim);
+    // M1 always starts the same world; picking a seed comes later.
     if (restored.kind !== 'loaded') {
-        sim.startNewWorld(NEW_WORLD_SEED);
+        sim.startNewWorld(DEFAULT_WORLD_SEED);
     }
 
     const renderer = await WorldRenderer.create(host);
@@ -38,7 +36,7 @@ async function startGame(host: HTMLElement): Promise<void> {
     const worldMenu = new WorldMenu();
     worldMenu.mount(host);
 
-    const viewportSize = (): ViewportSize => renderer.viewportSize();
+    const viewportSize = renderer.viewportSize.bind(renderer);
     const controls = new CameraControls({
         canvas: renderer.canvas,
         camera,
@@ -60,7 +58,7 @@ async function startGame(host: HTMLElement): Promise<void> {
     worldMenu.onNewWorld(() =>
         loop.replaceWorld(() => {
             saves.clear();
-            sim.startNewWorld(NEW_WORLD_SEED);
+            sim.startNewWorld(DEFAULT_WORLD_SEED);
         }),
     );
     if (restored.kind === 'broken') {

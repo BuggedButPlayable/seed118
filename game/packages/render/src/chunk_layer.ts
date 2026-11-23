@@ -1,9 +1,16 @@
-import { CHUNK_SIZE, RESOURCE_ID_NONE, getResourceDefinitionById } from '@seed118/sim';
+import {
+    CHUNK_SIZE,
+    RESOURCE_ID_NONE,
+    chunkKey,
+    chunkToTileOrigin,
+    getResourceDefinitionById,
+} from '@seed118/sim';
 import type { ChunkCoord, TileCoord } from '@seed118/sim';
 import { Container, Graphics } from 'pixi.js';
 
 import { CHUNK_BORDER_COLOR, GRID_COLOR, resourceTint } from './palette';
 import type { SimView } from './sim_view';
+import type { WorldPoint } from './tile_geometry';
 
 /** All local tile positions of a chunk, row by row. */
 const LOCAL_TILES: readonly TileCoord[] = Array.from({ length: CHUNK_SIZE * CHUNK_SIZE }, (_, index) => ({
@@ -20,16 +27,32 @@ export class ChunkLayer {
     private readonly drawnChunks = new Map<string, Graphics>();
 
     public drawChunk(view: SimView, chunk: ChunkCoord): void {
-        const key = `${chunk.x},${chunk.y}`;
+        const key = chunkKey(chunk);
         if (this.drawnChunks.has(key)) {
             return;
         }
         const graphics = new Graphics();
-        graphics.position.set(chunk.x * CHUNK_SIZE, chunk.y * CHUNK_SIZE);
+        const origin = chunkToTileOrigin(chunk);
+        graphics.position.set(origin.x, origin.y);
         drawNebula(graphics, view, chunk);
         drawGrid(graphics);
         this.container.addChild(graphics);
         this.drawnChunks.set(key, graphics);
+    }
+
+    /**
+     * Hides chunks outside the visible world rectangle, so exploring far does not make every frame slower.
+     * @param topLeft Top-left corner of the view in tiles.
+     * @param bottomRight Bottom-right corner of the view in tiles.
+     */
+    public cull(topLeft: WorldPoint, bottomRight: WorldPoint): void {
+        for (const graphics of this.drawnChunks.values()) {
+            graphics.visible =
+                graphics.x + CHUNK_SIZE > topLeft.x &&
+                graphics.x < bottomRight.x &&
+                graphics.y + CHUNK_SIZE > topLeft.y &&
+                graphics.y < bottomRight.y;
+        }
     }
 
     /** Forgets everything and draws every chunk the simulation has (after a load or a new world). */
@@ -45,11 +68,9 @@ export class ChunkLayer {
 }
 
 function drawNebula(graphics: Graphics, view: SimView, chunk: ChunkCoord): void {
+    const origin = chunkToTileOrigin(chunk);
     for (const local of LOCAL_TILES) {
-        const resourceId = view.getResourceIdAt({
-            x: chunk.x * CHUNK_SIZE + local.x,
-            y: chunk.y * CHUNK_SIZE + local.y,
-        });
+        const resourceId = view.getResourceIdAt({ x: origin.x + local.x, y: origin.y + local.y });
         if (resourceId === RESOURCE_ID_NONE) {
             continue;
         }
