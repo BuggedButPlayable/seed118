@@ -3,10 +3,10 @@
  * Older versions are migrated step by step. Anything malformed throws: a broken save is not player input.
  */
 
-import { SIDE_COUNT } from '../grid/grid_math';
+import { isValidRotation } from '../grid/grid_math';
 import type { ChunkCoord, Rotation } from '../types';
-import { SAVE_V1_VERSION, migrateV1ToV2 } from './save_v1';
-import type { SaveBase, SaveStructureV1 } from './save_v1';
+import { SAVE_V1_VERSION } from './save_v1';
+import type { SaveBase, SaveGameV1, SaveStructureV1 } from './save_v1';
 import { SAVE_V2_VERSION } from './save_v2';
 import type { SaveDeliveredV2, SaveGameV2, SaveItemSlotV2, SaveProgressV2 } from './save_v2';
 
@@ -36,6 +36,11 @@ export function parseSave(data: unknown): SaveGameV2 {
     throw new Error(`Unsupported save version: ${version}`);
 }
 
+/** v1 → v2: v1 worlds had no items, no extraction progress and no deliveries. */
+function migrateV1ToV2(save: SaveGameV1): SaveGameV2 {
+    return { ...save, version: SAVE_V2_VERSION, item_slots: [], extraction_progress: [], delivered: [] };
+}
+
 function readBase(root: JsonObject): SaveBase {
     return {
         world_seed: readInt(root, 'world_seed'),
@@ -47,36 +52,35 @@ function readBase(root: JsonObject): SaveBase {
 
 function readStructure(value: unknown): SaveStructureV1 {
     const entry = asObject(value, 'structure');
-    const tick = entry.tick === undefined ? undefined : readInt(entry, 'tick');
     return {
-        id: readPositiveInt(entry, 'id'),
+        id: readIntAtLeast(entry, 'id', 1),
         definition_key: readString(entry, 'definition_key'),
         coord: readCoord(entry.coord),
         rotation: readRotation(entry),
-        ...(tick === undefined ? {} : { tick }),
+        tick: entry.tick === undefined ? 0 : readInt(entry, 'tick'),
     };
 }
 
 function readItemSlot(value: unknown): SaveItemSlotV2 {
     const entry = asObject(value, 'item slot');
     return {
-        structure_id: readPositiveInt(entry, 'structure_id'),
+        structure_id: readIntAtLeast(entry, 'structure_id', 1),
         item_key: readString(entry, 'item_key'),
-        ticks_remaining: readNonNegativeInt(entry, 'ticks_remaining'),
+        ticks_remaining: readIntAtLeast(entry, 'ticks_remaining', 0),
     };
 }
 
 function readProgress(value: unknown): SaveProgressV2 {
     const entry = asObject(value, 'extraction progress');
     return {
-        structure_id: readPositiveInt(entry, 'structure_id'),
-        ticks: readNonNegativeInt(entry, 'ticks'),
+        structure_id: readIntAtLeast(entry, 'structure_id', 1),
+        ticks: readIntAtLeast(entry, 'ticks', 0),
     };
 }
 
 function readDelivered(value: unknown): SaveDeliveredV2 {
     const entry = asObject(value, 'delivered');
-    return { item_key: readString(entry, 'item_key'), count: readNonNegativeInt(entry, 'count') };
+    return { item_key: readString(entry, 'item_key'), count: readIntAtLeast(entry, 'count', 0) };
 }
 
 function readCoord(value: unknown): ChunkCoord {
@@ -85,8 +89,8 @@ function readCoord(value: unknown): ChunkCoord {
 }
 
 function readRotation(entry: JsonObject): Rotation {
-    const rotation = readNonNegativeInt(entry, 'rotation');
-    if (rotation >= SIDE_COUNT) {
+    const rotation = readInt(entry, 'rotation');
+    if (!isValidRotation(rotation)) {
         throw new Error(`Invalid rotation in save: ${rotation}`);
     }
     return rotation as Rotation;
@@ -102,8 +106,8 @@ function readList<T>(root: JsonObject, key: string, readEntry: (value: unknown) 
 
 function readString(entry: JsonObject, key: string): string {
     const value = entry[key];
-    if (typeof value !== 'string' || value === '') {
-        throw new Error(`Save field "${key}" must be a non-empty string.`);
+    if (typeof value !== 'string') {
+        throw new Error(`Save field "${key}" must be a string.`);
     }
     return value;
 }
@@ -116,18 +120,10 @@ function readInt(entry: JsonObject, key: string): number {
     return value;
 }
 
-function readNonNegativeInt(entry: JsonObject, key: string): number {
+function readIntAtLeast(entry: JsonObject, key: string, minimum: number): number {
     const value = readInt(entry, key);
-    if (value < 0) {
-        throw new Error(`Save field "${key}" must not be negative, got: ${value}`);
-    }
-    return value;
-}
-
-function readPositiveInt(entry: JsonObject, key: string): number {
-    const value = readInt(entry, key);
-    if (value < 1) {
-        throw new Error(`Save field "${key}" must be positive, got: ${value}`);
+    if (value < minimum) {
+        throw new Error(`Save field "${key}" must be at least ${minimum}, got: ${value}`);
     }
     return value;
 }

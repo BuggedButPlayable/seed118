@@ -39,10 +39,7 @@ export function writeSaveV2(state: WorldState, grid: GridModel): SaveGameV2 {
         world_seed: state.worldSeed,
         tick_index: state.tickIndex,
         structures: state.structureStore.getAllStructures().sort(byId).map(toSaveStructure),
-        persistent_chunks: grid
-            .getAllPersistentChunks()
-            .sort(byCoord)
-            .map((coord) => ({ x: coord.x, y: coord.y })),
+        persistent_chunks: grid.getAllPersistentChunks().sort(byCoord),
         item_slots: state.itemSlots.entries().map(([structureId, slot]) => ({
             structure_id: structureId,
             item_key: getItemDefinitionById(slot.itemId).key,
@@ -67,7 +64,7 @@ export function loadSaveV2(save: SaveGameV2): { state: WorldState; grid: GridMod
     state.tickIndex = save.tick_index;
 
     const grid = createWorldGrid(state);
-    grid.setChunkPersistent(save.persistent_chunks.map((coord) => ({ x: coord.x, y: coord.y })));
+    grid.setChunkPersistent(save.persistent_chunks);
 
     const records = save.structures.map(toStructureRecord).sort(byId);
     state.structureStore = new StructureStore(records);
@@ -104,7 +101,7 @@ function toStructureRecord(structure: SaveStructureV1): StructureRecord {
     return {
         id: structure.id,
         definitionId: getStructureDefinitionByKey(structure.definition_key).id,
-        position: { x: structure.coord.x, y: structure.coord.y },
+        position: structure.coord,
         rotation: structure.rotation,
         tick: structure.tick ?? 0,
     };

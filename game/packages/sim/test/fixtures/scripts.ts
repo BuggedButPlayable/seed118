@@ -3,14 +3,8 @@ import type { TileCoord } from '../../src/types/coords';
 import type { Command } from '../../src/types/commands';
 import type { Event } from '../../src/types/events';
 import { focusCommand, placeCommand } from './commands';
-import {
-    MOCK_BELT,
-    MOCK_EXTRACTOR,
-    MOCK_MULTITILE,
-    MOCK_SIMPLE_STRUCTURE,
-    MOCK_SINK,
-} from './mock_structures';
-import { findResourceTile } from './resource_tiles';
+import { MOCK_MULTITILE, MOCK_SIMPLE_STRUCTURE } from './mock_structures';
+import { buildLine, placeSinkBelow } from './transport_line';
 
 export const SCRIPT_SIMPLE_ANCHOR: TileCoord = { x: 10, y: 10 };
 export const SCRIPT_MULTITILE_ANCHOR: TileCoord = { x: 13, y: 10 };
@@ -47,7 +41,6 @@ export function runPlacementScript(sim: SimWorld): Event[] {
     return events;
 }
 
-const TRANSPORT_BELT_COUNT = 3;
 /** Long enough for deliveries, short enough that items are still on the belts. */
 const TRANSPORT_SCRIPT_TICKS = 25;
 
@@ -57,14 +50,6 @@ const TRANSPORT_SCRIPT_TICKS = 25;
  */
 export function runTransportScript(sim: SimWorld): void {
     sim.tick([focusCommand({ x: 0, y: 0 })], []);
-    const source = findResourceTile(sim, TRANSPORT_BELT_COUNT + 1);
-    const tileBelow = (steps: number): TileCoord => ({ x: source.x, y: source.y + steps });
-    const belts = Array.from({ length: TRANSPORT_BELT_COUNT }, (_, index) =>
-        placeCommand(MOCK_BELT.id, tileBelow(index + 1)),
-    );
-    run(sim, TRANSPORT_SCRIPT_TICKS, [
-        placeCommand(MOCK_EXTRACTOR.id, source),
-        ...belts,
-        placeCommand(MOCK_SINK.id, tileBelow(TRANSPORT_BELT_COUNT + 1)),
-    ]);
+    placeSinkBelow(sim, buildLine(sim, 'top-down'));
+    run(sim, TRANSPORT_SCRIPT_TICKS);
 }

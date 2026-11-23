@@ -1,6 +1,6 @@
 import { getStructureDefinitionById } from '../defs/structure_registry';
 import type { GridModel } from '../grid/grid_model';
-import { SIDE_COUNT, computePlacedFootprint } from '../grid/grid_math';
+import { computePlacedFootprint, isValidRotation } from '../grid/grid_math';
 import type { Rotation, TileCoord } from '../types/coords';
 import { RejectReason } from '../types/events';
 import type { DefId } from '../types/ids';
@@ -37,8 +37,4 @@ export function checkPlacement(grid: GridModel, request: PlacementRequest): Plac
         return { reason: RejectReason.NoResource, details: 'Collectors must stand on a nebula.' };
     }
     return null;
-}
-
-function isValidRotation(rotation: number): boolean {
-    return Number.isInteger(rotation) && rotation >= 0 && rotation < SIDE_COUNT;
 }

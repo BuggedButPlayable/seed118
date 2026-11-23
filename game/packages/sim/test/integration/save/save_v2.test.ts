@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
+import { computeFootprintTiles } from '../../../src/grid/grid_math';
 import { SAVE_V1_VERSION } from '../../../src/save/save_v1';
 import type { SaveGameV1 } from '../../../src/save/save_v1';
 import { SimWorld } from '../../../src/sim/sim_world';
@@ -64,8 +65,7 @@ describe('Save v2 (integration)', () => {
         const multiTile = reloaded
             .getStructures()
             .find((structure) => structure.definitionId === MOCK_MULTITILE.id);
-        for (const offset of MOCK_MULTITILE.footprint) {
-            const tile = { x: SCRIPT_MULTITILE_ANCHOR.x + offset.x, y: SCRIPT_MULTITILE_ANCHOR.y + offset.y };
+        for (const tile of computeFootprintTiles(SCRIPT_MULTITILE_ANCHOR, MOCK_MULTITILE.footprint)) {
             expect(reloaded.getStructureIdAt(tile)).toBe(multiTile!.id);
         }
     });

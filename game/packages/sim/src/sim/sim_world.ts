@@ -34,8 +34,6 @@ export class SimWorld {
     private readonly transportSystem = new TransportSystem();
     private readonly transferSystem = new TransferSystem();
 
-    constructor() {}
-
     /**
      * Advances the simulation by one tick. Fixed system order:
      * commands → focus → chunk generation → extraction → transport → transfer.

@@ -197,9 +197,9 @@ Save files include only state that cannot be reconstructed deterministically:
 All lists are sorted (by id or coordinate), so equal worlds give equal saves.
 
 Load rules:
-- Untrusted data goes through `parseSave(data: unknown)`: it validates every field and migrates older versions
-  step by step (v1 → v2: no items, no progress, no deliveries). A malformed save throws and leaves the current
-  world unchanged.
+- Untrusted data goes through `parseSave(data: unknown)`: it checks the shape and type of every field and migrates older versions
+  (v1 → v2: no items, no progress, no deliveries). Unknown definition or item keys throw during load. Either way
+  a broken save leaves the current world unchanged.
 - World is reset from seed. The grid is created with its chunk generator already bound (`createWorldGrid`),
   so chunks created while restoring structures get their resources.
 - Persistent chunks are restored first.

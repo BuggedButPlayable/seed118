@@ -211,6 +211,11 @@ export function computeWorldPorts(
     });
 }
 
+/** Whether a number is a valid rotation (0..3 quarter turns), e.g. from a command or a save. */
+export function isValidRotation(rotation: number): boolean {
+    return Number.isInteger(rotation) && rotation >= 0 && rotation < SIDE_COUNT;
+}
+
 function translate(anchor: TileCoord, offset: TileCoord): TileCoord {
     return { x: anchor.x + offset.x, y: anchor.y + offset.y };
 }

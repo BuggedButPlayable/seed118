@@ -18,24 +18,9 @@ function fnv1a32(input: string): number {
     return hash >>> 0;
 }
 
-/** Hash of everything that defines the world state from the outside. */
+/** Hash of the save: it holds every piece of state that cannot be regenerated from the seed. */
 function hashWorld(sim: SimWorld): number {
-    const structures = sim.getStructures().map((structure) => ({
-        id: structure.id,
-        definitionId: structure.definitionId,
-        x: structure.position.x,
-        y: structure.position.y,
-        rotation: structure.rotation,
-    }));
-    return fnv1a32(
-        JSON.stringify({
-            seed: sim.getWorldSeed(),
-            tick: sim.getTickIndex(),
-            structures,
-            items: sim.getItemSlots(),
-            delivered: sim.getDeliveredCount('hydrogen'),
-        }),
-    );
+    return fnv1a32(JSON.stringify(sim.saveV2()));
 }
 
 /** Structures plus items moving and being delivered. */
