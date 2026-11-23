@@ -12,6 +12,7 @@ import { run } from '../../fixtures/scripts';
 // Uses the production definitions on purpose: this is the M1 loop as the player sees it.
 const CORE = getStructureDefinitionByKey('core');
 const COLLECTOR = getStructureDefinitionByKey('collector');
+const TURN_LEFT = getStructureDefinitionByKey('belt_turn_left');
 /** Directly south of the Core's bottom-left tile; a collector facing north feeds the Core from here. */
 const BELOW_CORE = { x: 0, y: 2 };
 const MAX_SEED_TRIES = 200;
@@ -101,5 +102,20 @@ describe('A new world', () => {
         const expected = Math.floor(RUN_TICKS / COLLECTOR.extraction!.ticksPerItem);
         expect(sim.getDeliveredCount('hydrogen')).toBe(expected);
         expect(findEvents(events, EventType.Delivered)).toHaveLength(expected);
+    });
+
+    it('items go round a curved belt into the Core', () => {
+        const sim = startWorldWithNebulaBelowCore();
+        const events: Event[] = [];
+        // Collector facing east, then a left turn (in from the west, out to the north) into the Core's bottom edge
+        const commands = [
+            placeCommand(COLLECTOR.id, BELOW_CORE, 1),
+            placeCommand(TURN_LEFT.id, { x: BELOW_CORE.x + 1, y: BELOW_CORE.y }, 2),
+        ];
+
+        run(sim, RUN_TICKS, commands, events);
+
+        expect(findEvents(events, EventType.CommandRejected)).toEqual([]);
+        expect(sim.getDeliveredCount('hydrogen')).toBeGreaterThan(0);
     });
 });

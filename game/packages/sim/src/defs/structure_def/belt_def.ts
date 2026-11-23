@@ -1,8 +1,9 @@
 import type { StructureDefinition } from '../../types/structure';
 
 /** Placeholder balancing (M1): 10 ticks per tile = 2 tiles per second at 20 ticks per second. */
-const BELT_TRANSIT_TICKS = 10;
+export const BELT_TRANSIT_TICKS = 10;
 
+/** Straight belt: in on the north edge, out on the south edge. */
 export const BELT_DEFINITION: StructureDefinition = {
     id: 2,
     key: 'belt',

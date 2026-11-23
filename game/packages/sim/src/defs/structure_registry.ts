@@ -5,11 +5,19 @@
 import type { DefId } from '../types/ids';
 import type { StructureDefinition } from '../types/structure';
 import { findDefinitionById, findDefinitionByKey } from './definition_lookup';
-import { BELT_DEFINITION, COLLECTOR_DEFINITION, CORE_DEFINITION } from './structure_def';
+import {
+    BELT_DEFINITION,
+    BELT_TURN_LEFT_DEFINITION,
+    BELT_TURN_RIGHT_DEFINITION,
+    COLLECTOR_DEFINITION,
+    CORE_DEFINITION,
+} from './structure_def';
 
 export const STRUCTURE_DEFINITIONS: readonly StructureDefinition[] = [
     CORE_DEFINITION,
     BELT_DEFINITION,
+    BELT_TURN_LEFT_DEFINITION,
+    BELT_TURN_RIGHT_DEFINITION,
     COLLECTOR_DEFINITION,
 ];
 

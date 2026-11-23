@@ -35,6 +35,8 @@ export class GameLoop {
     constructor(private readonly options: GameLoopOptions) {}
 
     public start(): void {
+        // One tick right away, so WorldLoaded builds the view before the first frame is drawn.
+        this.tickOnce();
         requestAnimationFrame(this.frame);
     }
 

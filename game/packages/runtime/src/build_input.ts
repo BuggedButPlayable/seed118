@@ -1,6 +1,7 @@
 import type { BuildPreview, Camera, ViewportSize } from '@seed118/render';
 import { isSameCoord } from '@seed118/sim';
-import type { SimCommandQueue, TileCoord } from '@seed118/sim';
+import type { Command, SimCommandQueue, TileCoord } from '@seed118/sim';
+import { BeltDrag, isBeltDefinition } from '@seed118/ui';
 import type { ToolState } from '@seed118/ui';
 
 const LEFT_BUTTON = 0;
@@ -14,13 +15,15 @@ export interface BuildInputOptions {
 }
 
 /**
- * Turns mouse input on the map into commands for the active tool. Holding the left button and dragging
- * applies the tool to every tile the cursor enters (draws belt lines). Right click puts the tool away.
+ * Turns mouse input on the map into commands for the active tool. Dragging applies the tool to every tile
+ * the cursor enters; with a belt it draws a line that follows the drag and bends with curves.
+ * Right click puts the tool away (and drops an unfinished belt line).
  */
 export class BuildInput {
     private hoverTile: TileCoord | null = null;
     private paintingPointerId: number | null = null;
     private lastPaintedTile: TileCoord | null = null;
+    private beltDrag: BeltDrag | null = null;
 
     constructor(private readonly options: BuildInputOptions) {
         const { canvas } = options;
@@ -40,6 +43,9 @@ export class BuildInput {
         if (tool.kind === 'remove') {
             return { kind: 'remove', tile: this.hoverTile };
         }
+        if (this.beltDrag) {
+            return { kind: 'place', request: this.beltDrag.pendingPlacement(this.options.tools.rotation) };
+        }
         return {
             kind: 'place',
             request: {
@@ -52,9 +58,14 @@ export class BuildInput {
 
     private readonly onPointerMove = (event: PointerEvent): void => {
         this.hoverTile = this.tileUnder(event);
-        if (event.pointerId === this.paintingPointerId) {
-            this.applyToolAt(this.hoverTile);
+        if (event.pointerId !== this.paintingPointerId) {
+            return;
         }
+        if (this.beltDrag) {
+            this.enqueueAll(this.beltDrag.moveTo(this.hoverTile));
+            return;
+        }
+        this.applyToolAt(this.hoverTile);
     };
 
     private readonly onPointerDown = (event: PointerEvent): void => {
@@ -64,12 +75,22 @@ export class BuildInput {
         this.paintingPointerId = event.pointerId;
         this.lastPaintedTile = null;
         this.options.canvas.setPointerCapture(event.pointerId);
+        const tool = this.options.tools.tool;
+        if (tool.kind === 'place' && isBeltDefinition(tool.definitionId)) {
+            this.beltDrag = new BeltDrag(this.tileUnder(event));
+            return;
+        }
         this.applyToolAt(this.tileUnder(event));
     };
 
     private readonly onPointerUp = (event: PointerEvent): void => {
-        if (event.pointerId === this.paintingPointerId) {
-            this.paintingPointerId = null;
+        if (event.pointerId !== this.paintingPointerId) {
+            return;
+        }
+        this.paintingPointerId = null;
+        if (this.beltDrag) {
+            this.enqueueAll(this.beltDrag.finish(this.options.tools.rotation));
+            this.beltDrag = null;
         }
     };
 
@@ -79,6 +100,8 @@ export class BuildInput {
 
     private readonly onContextMenu = (event: MouseEvent): void => {
         event.preventDefault();
+        this.beltDrag = null;
+        this.paintingPointerId = null;
         this.options.tools.clear();
     };
 
@@ -90,6 +113,12 @@ export class BuildInput {
         this.lastPaintedTile = tile;
         const command = this.options.tools.commandAt(tile);
         if (command) {
+            this.options.commands.enqueueCommand(command);
+        }
+    }
+
+    private enqueueAll(commands: readonly Command[]): void {
+        for (const command of commands) {
             this.options.commands.enqueueCommand(command);
         }
     }

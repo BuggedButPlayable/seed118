@@ -4,7 +4,9 @@
 
 import type { StructurePort } from '@seed118/sim';
 
-import { edgeMidpoint } from './tile_geometry';
+import { edgeMidpoint, tileCenter } from './tile_geometry';
+
+const HALF_WAY = 0.5;
 import type { WorldPoint } from './tile_geometry';
 
 /**
@@ -19,8 +21,9 @@ export function crossingProgress(ticksRemaining: number, transitTicks: number, s
 }
 
 /**
- * Point between the input edge and the output edge of a one-tile holder (a belt).
- * Without both ports the item sits in the middle of the anchor tile.
+ * Point on the way from the input edge through the tile center to the output edge of a one-tile holder,
+ * so items go straight on straight belts and round the corner on curves.
+ * Without both ports there is no path.
  */
 export function itemPosition(ports: readonly StructurePort[], progress: number): WorldPoint | null {
     const input = ports.find((port) => port.type === 'input');
@@ -29,6 +32,13 @@ export function itemPosition(ports: readonly StructurePort[], progress: number):
         return null;
     }
     const start = edgeMidpoint(input.tile, input.side);
+    const center = tileCenter(input.tile);
     const end = edgeMidpoint(output.tile, output.side);
-    return { x: start.x + (end.x - start.x) * progress, y: start.y + (end.y - start.y) * progress };
+    return progress < HALF_WAY
+        ? interpolate(start, center, progress / HALF_WAY)
+        : interpolate(center, end, (progress - HALF_WAY) / HALF_WAY);
+}
+
+function interpolate(from: WorldPoint, to: WorldPoint, fraction: number): WorldPoint {
+    return { x: from.x + (to.x - from.x) * fraction, y: from.y + (to.y - from.y) * fraction };
 }

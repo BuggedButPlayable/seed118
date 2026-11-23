@@ -21,6 +21,19 @@ describe('item motion', () => {
         expect(itemPosition(ports, 0.5)).toEqual({ x: 4.5, y: 2.5 });
     });
 
+    it('itemPosition goes round the corner on a curve, through the tile center', () => {
+        // Turn left at rotation 0: in on the east edge, out on the south edge
+        const ports = computeWorldPorts(
+            { x: 0, y: 0 },
+            0,
+            getStructureDefinitionByKey('belt_turn_left').ports,
+        );
+
+        expect(itemPosition(ports, 0.25)).toEqual({ x: 0.75, y: 0.5 });
+        expect(itemPosition(ports, 0.5)).toEqual({ x: 0.5, y: 0.5 });
+        expect(itemPosition(ports, 0.75)).toEqual({ x: 0.5, y: 0.75 });
+    });
+
     it('itemPosition has no answer for a holder without an input and an output', () => {
         expect(itemPosition([], 0.5)).toBeNull();
     });

@@ -31,6 +31,8 @@ const STRUCTURE_STYLES: Readonly<Record<string, BodyStyle>> = {
     core: { fill: 0x1d2236, stroke: 0xffb347 },
     collector: { fill: 0x173d36, stroke: 0x4fd1a5 },
     belt: { fill: 0x1f2433, stroke: 0x5a6480 },
+    belt_turn_left: { fill: 0x1f2433, stroke: 0x5a6480 },
+    belt_turn_right: { fill: 0x1f2433, stroke: 0x5a6480 },
 };
 const FALLBACK_STRUCTURE_STYLE: BodyStyle = { fill: 0x222222, stroke: 0x999999 };
 
