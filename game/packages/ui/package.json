@@ -1,0 +1,12 @@
+{
+  "name": "@seed118/ui",
+  "private": true,
+  "type": "module",
+  "description": "HUD and tools. Turns player intent into commands, never changes world state.",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@seed118/sim": "*"
+  }
+}

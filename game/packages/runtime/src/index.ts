@@ -2,6 +2,8 @@
  * Public API of @seed118/runtime: frame loop, input and platform glue.
  */
 
+export { BuildInput } from './build_input';
+export type { BuildInputOptions } from './build_input';
 export { CameraControls } from './camera_controls';
 export type { CameraControlsOptions } from './camera_controls';
 export { FixedStepClock } from './fixed_step_clock';

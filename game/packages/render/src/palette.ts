@@ -20,3 +20,25 @@ const FALLBACK_RESOURCE_TINT: TintStyle = { color: 0x888888, alpha: 0.25 };
 export function resourceTint(resourceKey: string): TintStyle {
     return RESOURCE_TINTS[resourceKey] ?? FALLBACK_RESOURCE_TINT;
 }
+
+export interface BodyStyle {
+    fill: number;
+    stroke: number;
+}
+
+/** Structure bodies by structure key; unknown structures fall back to a neutral chip. */
+const STRUCTURE_STYLES: Readonly<Record<string, BodyStyle>> = {
+    core: { fill: 0x1d2236, stroke: 0xffb347 },
+    collector: { fill: 0x173d36, stroke: 0x4fd1a5 },
+    belt: { fill: 0x1f2433, stroke: 0x5a6480 },
+};
+const FALLBACK_STRUCTURE_STYLE: BodyStyle = { fill: 0x222222, stroke: 0x999999 };
+
+export function structureStyle(structureKey: string): BodyStyle {
+    return STRUCTURE_STYLES[structureKey] ?? FALLBACK_STRUCTURE_STYLE;
+}
+
+export const INPUT_PORT_COLOR = 0x6f9bff;
+export const OUTPUT_PORT_COLOR = 0xffb347;
+export const VALID_PREVIEW_COLOR = 0x4fd18b;
+export const INVALID_PREVIEW_COLOR = 0xff5a5a;

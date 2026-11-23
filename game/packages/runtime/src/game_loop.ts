@@ -1,6 +1,6 @@
-import { CommandType, SIM_TICKS_PER_SECOND, SimCommandQueue, tileToChunk } from '@seed118/sim';
-import type { ChunkCoord, Command, Event, SimWorld } from '@seed118/sim';
-import type { Camera, WorldRenderer } from '@seed118/render';
+import { CommandType, SIM_TICKS_PER_SECOND, tileToChunk } from '@seed118/sim';
+import type { ChunkCoord, Event, SimCommandQueue, SimWorld } from '@seed118/sim';
+import type { BuildPreview, Camera, WorldRenderer } from '@seed118/render';
 
 import type { CameraControls } from './camera_controls';
 import { FixedStepClock } from './fixed_step_clock';
@@ -15,6 +15,10 @@ export interface GameLoopOptions {
     renderer: WorldRenderer;
     camera: Camera;
     controls: CameraControls;
+    /** Player intent for the next tick, filled by input and UI. */
+    commands: SimCommandQueue;
+    /** The ghost to draw this frame. */
+    preview: () => BuildPreview | null;
 }
 
 /**
@@ -22,7 +26,6 @@ export interface GameLoopOptions {
  * camera, and draws a frame. All player intent reaches the simulation as commands (architecture §3).
  */
 export class GameLoop {
-    private readonly commandQueue = new SimCommandQueue();
     private readonly clock = new FixedStepClock(STEP_MS, MAX_STEPS_PER_FRAME);
     private lastFrameMs: number | null = null;
     private focusChunk: ChunkCoord | null = null;
@@ -31,11 +34,6 @@ export class GameLoop {
 
     public start(): void {
         requestAnimationFrame(this.frame);
-    }
-
-    /** Queues a command for the next simulation tick. */
-    public enqueue(command: Command): void {
-        this.commandQueue.enqueueCommand(command);
     }
 
     private readonly frame = (nowMs: number): void => {
@@ -48,13 +46,13 @@ export class GameLoop {
         for (let step = 0; step < steps; step++) {
             this.tickOnce();
         }
-        this.options.renderer.draw(this.options.camera);
+        this.options.renderer.draw(this.options.sim, this.options.camera, this.options.preview());
         requestAnimationFrame(this.frame);
     };
 
     private tickOnce(): void {
         const events: Event[] = [];
-        this.options.sim.tick(this.commandQueue.drainCommands(), events);
+        this.options.sim.tick(this.options.commands.drainCommands(), events);
         this.options.renderer.applyEvents(this.options.sim, events);
     }
 
@@ -65,6 +63,6 @@ export class GameLoop {
             return;
         }
         this.focusChunk = chunk;
-        this.enqueue({ type: CommandType.SetFocusChunk, coord: chunk });
+        this.options.commands.enqueueCommand({ type: CommandType.SetFocusChunk, coord: chunk });
     }
 }

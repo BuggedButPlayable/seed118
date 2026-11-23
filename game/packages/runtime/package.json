@@ -8,6 +8,7 @@
   },
   "dependencies": {
     "@seed118/render": "*",
-    "@seed118/sim": "*"
+    "@seed118/sim": "*",
+    "@seed118/ui": "*"
   }
 }

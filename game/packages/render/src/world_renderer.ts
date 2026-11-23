@@ -4,6 +4,9 @@ import { Application, Container } from 'pixi.js';
 
 import type { Camera, ViewportSize } from './camera';
 import { ChunkLayer } from './chunk_layer';
+import { PreviewLayer } from './preview_layer';
+import type { BuildPreview } from './preview_layer';
+import { StructureLayer } from './structure_layer';
 import { SPACE_COLOR } from './palette';
 import type { SimView } from './sim_view';
 
@@ -14,9 +17,15 @@ import type { SimView } from './sim_view';
 export class WorldRenderer {
     private readonly world = new Container();
     private readonly chunkLayer = new ChunkLayer();
+    private readonly structureLayer = new StructureLayer();
+    private readonly previewLayer = new PreviewLayer();
 
     private constructor(private readonly app: Application) {
-        this.world.addChild(this.chunkLayer.container);
+        this.world.addChild(
+            this.chunkLayer.container,
+            this.structureLayer.container,
+            this.previewLayer.graphics,
+        );
         this.app.stage.addChild(this.world);
     }
 
@@ -40,22 +49,46 @@ export class WorldRenderer {
     /** Updates the view from the events of one simulation tick. */
     public applyEvents(view: SimView, events: readonly Event[]): void {
         for (const event of events) {
-            if (event.type === EventType.ChunkGenerated) {
-                this.chunkLayer.drawChunk(view, event.coord);
-            }
+            this.applyEvent(view, event);
         }
     }
 
     /** Rebuilds the whole view from snapshots, e.g. after a new world or a load. */
     public rebuild(view: SimView): void {
         this.chunkLayer.redrawAll(view);
+        this.structureLayer.redrawAll(view);
     }
 
-    /** Draws one frame from the camera's point of view. */
-    public draw(camera: Camera): void {
+    /** Draws one frame from the camera's point of view, with the ghost of the active tool. */
+    public draw(view: SimView, camera: Camera, preview: BuildPreview | null): void {
+        this.previewLayer.update(view, preview);
         const origin = camera.worldOrigin(this.viewportSize());
         this.world.position.set(origin.x, origin.y);
         this.world.scale.set(camera.zoom);
         this.app.render();
+    }
+
+    private applyEvent(view: SimView, event: Event): void {
+        switch (event.type) {
+            case EventType.ChunkGenerated:
+                this.chunkLayer.drawChunk(view, event.coord);
+                return;
+            case EventType.StructurePlaced:
+                this.structureLayer.addByKey(event.structureId, event.structureKey, {
+                    anchor: event.structureCoord,
+                    rotation: event.structureRotation,
+                });
+                return;
+            case EventType.StructureRemoved:
+                this.structureLayer.remove(event.structureId);
+                return;
+            // Nothing to draw for these (yet); the HUD reads deliveries itself.
+            case EventType.CommandRejected:
+            case EventType.Delivered:
+            case EventType.FocusChunkUpdated:
+            case EventType.TickAdvanced:
+            case EventType.WorldLoaded:
+                return;
+        }
     }
 }

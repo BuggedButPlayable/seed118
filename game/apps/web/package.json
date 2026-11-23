@@ -11,7 +11,8 @@
   "dependencies": {
     "@seed118/render": "*",
     "@seed118/runtime": "*",
-    "@seed118/sim": "*"
+    "@seed118/sim": "*",
+    "@seed118/ui": "*"
   },
   "devDependencies": {
     "vite": "^8.3.8"

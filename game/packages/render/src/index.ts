@@ -4,5 +4,6 @@
 
 export { Camera, DEFAULT_ZOOM, MAX_ZOOM, MIN_ZOOM } from './camera';
 export type { ScreenPoint, ViewportSize } from './camera';
+export type { BuildPreview } from './preview_layer';
 export type { SimView } from './sim_view';
 export { WorldRenderer } from './world_renderer';
