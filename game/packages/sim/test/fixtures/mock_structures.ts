@@ -76,6 +76,44 @@ export const MOCK_MULTITILE: StructureDefinition = {
     rotatable: true,
 };
 
+/** Belt: takes items in on its north edge, passes them out of its south edge after 2 ticks. */
+export const MOCK_BELT: StructureDefinition = {
+    id: 6,
+    key: 'test-belt',
+    footprint: [{ x: 0, y: 0 }],
+    ports: [
+        { tile: { x: 0, y: 0 }, side: 0, type: 'input' },
+        { tile: { x: 0, y: 0 }, side: 2, type: 'output' },
+    ],
+    deletable: true,
+    placeable: true,
+    rotatable: true,
+    transport: { transitTicks: 2 },
+};
+
+/** Collector: extracts one item every 3 ticks and offers it on its south edge. */
+export const MOCK_EXTRACTOR: StructureDefinition = {
+    id: 7,
+    key: 'test-extractor',
+    footprint: [{ x: 0, y: 0 }],
+    ports: [{ tile: { x: 0, y: 0 }, side: 2, type: 'output' }],
+    deletable: true,
+    placeable: true,
+    rotatable: true,
+    extraction: { ticksPerItem: 3 },
+};
+
+/** Belt whose input refuses hydrogen: tests receiver-gated acceptance. */
+export const MOCK_PICKY_BELT: StructureDefinition = {
+    ...MOCK_BELT,
+    id: 8,
+    key: 'test-picky-belt',
+    ports: [
+        { tile: { x: 0, y: 0 }, side: 0, type: 'input', accepts: ['helium'] },
+        { tile: { x: 0, y: 0 }, side: 2, type: 'output' },
+    ],
+};
+
 /**
  * All mock structures in an array for easy iteration.
  */
@@ -85,4 +123,7 @@ export const ALL_MOCK_STRUCTURES: StructureDefinition[] = [
     MOCK_NOT_DELETABLE,
     MOCK_NOT_ROTATABLE,
     MOCK_MULTITILE,
+    MOCK_BELT,
+    MOCK_EXTRACTOR,
+    MOCK_PICKY_BELT,
 ];

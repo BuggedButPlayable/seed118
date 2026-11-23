@@ -12,3 +12,7 @@ export const byId = (left: { readonly id: number }, right: { readonly id: number
 /** Row-major order: by y, then by x. */
 export const byCoord = (left: TileCoord | ChunkCoord, right: TileCoord | ChunkCoord): number =>
     left.y - right.y || left.x - right.x;
+
+/** Ascending by the numeric key of a [key, value] entry (e.g. structure id). */
+export const byEntryKey = <T>(left: readonly [number, T], right: readonly [number, T]): number =>
+    left[0] - right[0];

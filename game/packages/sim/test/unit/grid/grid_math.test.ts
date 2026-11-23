@@ -9,7 +9,12 @@ import {
     floorMod,
     rotateOffsets,
     computeFootprintTiles,
+    computeWorldPorts,
+    neighbourAcross,
+    oppositeSide,
+    rotateSide,
 } from '../../../src/grid/grid_math';
+import type { StructurePort } from '../../../src/types/structure';
 import type { TileCoord } from '../../../src/types';
 
 describe('tileToChunk', () => {
@@ -154,5 +159,56 @@ describe('computeFootprintTiles', () => {
 
     it('should return empty array for empty offsets', () => {
         expect(computeFootprintTiles({ x: 0, y: 0 }, [])).toEqual([]);
+    });
+});
+
+describe('port geometry', () => {
+    it('rotateSide turns clockwise and wraps around', () => {
+        expect(rotateSide(0, 1)).toBe(1);
+        expect(rotateSide(3, 1)).toBe(0);
+        expect(rotateSide(2, 3)).toBe(1);
+    });
+
+    it('oppositeSide pairs north/south and east/west', () => {
+        expect([0, 1, 2, 3].map((side) => oppositeSide(side as 0 | 1 | 2 | 3))).toEqual([2, 3, 0, 1]);
+    });
+
+    it('neighbourAcross steps to the tile sharing the edge (y points down)', () => {
+        const tile = { x: 4, y: 7 };
+        expect([0, 1, 2, 3].map((side) => neighbourAcross(tile, side as 0 | 1 | 2 | 3))).toEqual([
+            { x: 4, y: 6 },
+            { x: 5, y: 7 },
+            { x: 4, y: 8 },
+            { x: 3, y: 7 },
+        ]);
+    });
+
+    it('computeWorldPorts rotates port tiles and sides together with the footprint', () => {
+        const ports: StructurePort[] = [
+            { tile: { x: 1, y: 0 }, side: 0, type: 'input', accepts: ['hydrogen'] },
+            { tile: { x: 0, y: 0 }, side: 3, type: 'output' },
+        ];
+
+        const rotated = computeWorldPorts({ x: 10, y: 10 }, 1, ports);
+
+        expect(rotated).toEqual([
+            { tile: { x: 10, y: 11 }, side: 1, type: 'input', accepts: ['hydrogen'] },
+            { tile: { x: 10, y: 10 }, side: 0, type: 'output' },
+        ]);
+    });
+
+    it('rotated port tiles always lie on the rotated footprint', () => {
+        const footprint = [
+            { x: 0, y: 0 },
+            { x: 1, y: 0 },
+        ];
+        const ports: StructurePort[] = [{ tile: { x: 1, y: 0 }, side: 1, type: 'output' }];
+        const anchor = { x: -3, y: 2 };
+
+        for (const rotation of [0, 1, 2, 3] as const) {
+            const tiles = computeFootprintTiles(anchor, rotateOffsets(footprint, rotation));
+            const [port] = computeWorldPorts(anchor, rotation, ports);
+            expect(tiles).toContainEqual(port!.tile);
+        }
     });
 });

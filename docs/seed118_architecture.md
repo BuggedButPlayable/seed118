@@ -112,6 +112,23 @@ Acceptance rules are part of the simulation layer and must be:
 This rule enables machines with restrictive inputs (e.g. accepting only specific elements)
 without coupling transfer logic to sender-side machine knowledge.
 
+In data: an input port may list `accepts` (item keys). A port without `accepts` takes every item.
+A receiver also needs room: a structure holds at most one item (`ItemSlot`).
+
+### 5.3 Tick Order and Transfer Rules
+
+`SimWorld.tick()` runs its systems in this fixed order:
+commands → focus → chunk generation → extraction → transport → transfer.
+
+- **Extraction** (`extraction` spec): produces the item of the resource under the anchor tile every
+  `ticksPerItem` ticks. A full output slot pauses it.
+- **Transport** (`transport` spec): an item entering a structure waits `transitTicks` (≥ 1) before it may leave.
+  So an item moves at most one tile per tick.
+- **Transfer**: senders take turns in ascending structure id. If the receiver is full but its own item is
+  ready, the receiver moves first (downstream first). Full lines therefore advance without gaps,
+  independent of build order. Each structure gets one turn per tick, so cycles stay deterministic.
+- Removing a structure drops the item it holds.
+
 ## 6. Commands and Events
 
 ### Commands
@@ -175,9 +192,9 @@ Load rules:
 Gameplay/UI/View may only rely on what `packages/sim/src/index.ts` exports, in particular:
 - `SimCommandQueue.enqueueCommand(command)` / `drainCommands()`
 - `SimWorld.tick(commands, outEvents)`
-- Snapshot getters on `SimWorld` (`getStructures`, `getStructureIdAt`, `getResourceIdAt`, `getTickIndex`, `getWorldSeed`)
+- Snapshot getters on `SimWorld` (`getStructures`, `getStructureIdAt`, `getResourceIdAt`, `getItemSlots`, `getTickIndex`, `getWorldSeed`)
 - Save/Load entry points (`saveV1`, `loadV1`)
-- Definitions and shared geometry (registries, `rotateOffsets`, `computeFootprintTiles`)
+- Definitions and shared geometry (registries, `rotateOffsets`, `computeFootprintTiles`, `computeWorldPorts`, `rotateSide`, `oppositeSide`, `neighbourAcross`)
 
 Anything else is internal and must not be called across layers.
 

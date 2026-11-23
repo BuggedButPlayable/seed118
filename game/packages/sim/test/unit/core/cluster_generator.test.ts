@@ -15,6 +15,7 @@ describe('generateResourceId', () => {
     const mockResourceDef: ResourceDefinition = {
         id: 1,
         key: 'test_resource',
+        itemKey: 'hydrogen',
         cellSizeTiles: 10,
         seedSalt: 12345,
         spawnProb: 0.5,

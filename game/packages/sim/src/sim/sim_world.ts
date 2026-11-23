@@ -5,10 +5,15 @@ import { byId } from '../core/ordering';
 import { loadSaveGameV1, saveSaveGameV1 } from '../save/save_v1';
 import { WorldState } from '../state/world_state';
 import { CommandSystem } from '../systems/command_system';
+import { ExtractionSystem } from '../systems/extraction_system';
+import { TransferSystem } from '../systems/transfer_system';
+import { TransportSystem } from '../systems/transport_system';
+import { getItemDefinitionById } from '../defs/item_registry';
 import type { ChunkCoord, TileCoord } from '../types';
 import type { Command } from '../types/commands';
 import { EventType } from '../types/events';
 import type { Event } from '../types/events';
+import type { ItemSlotSnapshot } from '../types/item';
 import type { SaveGameV1 } from '../types/save_v1';
 import type { StructureRecord } from '../types/structure';
 
@@ -20,13 +25,17 @@ export class SimWorld {
     private worldState = new WorldState();
     private gridModel: GridModel;
     private readonly commandSystem = new CommandSystem();
+    private readonly extractionSystem = new ExtractionSystem();
+    private readonly transportSystem = new TransportSystem();
+    private readonly transferSystem = new TransferSystem();
 
     constructor() {
         this.gridModel = this.createGrid();
     }
 
     /**
-     * Advances the simulation by one tick.
+     * Advances the simulation by one tick. Fixed system order:
+     * commands → focus → chunk generation → extraction → transport → transfer.
      * @param commands Commands to apply this tick, in enqueue order.
      * @param outEvents Receives every event produced during this tick.
      */
@@ -37,6 +46,9 @@ export class SimWorld {
         this.commandSystem.tick(this.worldState, this.gridModel, commands, outEvents);
         this.applyPendingFocusChange(outEvents);
         this.ensureActiveChunksGenerated();
+        this.extractionSystem.tick(this.worldState, this.gridModel);
+        this.transportSystem.tick(this.worldState);
+        this.transferSystem.tick(this.worldState, this.gridModel);
 
         this.worldState.tickIndex += 1;
         outEvents.push({ type: EventType.TickAdvanced, tickIndex: this.worldState.tickIndex });
@@ -77,6 +89,15 @@ export class SimWorld {
     /** All structures, sorted by id. */
     public getStructures(): readonly Readonly<StructureRecord>[] {
         return this.worldState.structureStore.getAllStructures().sort(byId);
+    }
+
+    /** Every item currently held by a structure, sorted by structure id. */
+    public getItemSlots(): ItemSlotSnapshot[] {
+        return this.worldState.itemSlots.entries().map(([structureId, slot]) => ({
+            structureId,
+            itemKey: getItemDefinitionById(slot.itemId).key,
+            ticksRemaining: slot.ticksRemaining,
+        }));
     }
 
     public getStructureIdAt(tile: TileCoord): number {
