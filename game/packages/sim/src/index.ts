@@ -5,6 +5,7 @@
 
 export { SimWorld } from './sim/sim_world';
 export { SimCommandQueue } from './sim/sim_command_queue';
+export type { PlacementRejection, PlacementRequest } from './systems/placement_rules';
 
 export { CHUNK_SIZE, RESOURCE_ID_NONE, STRUCTURE_ID_NONE } from './core/constants';
 export {
@@ -18,6 +19,7 @@ export { ITEM_DEFINITIONS, getItemDefinitionById, getItemDefinitionByKey } from 
 // Shared geometry: preview and simulation must use the same footprint rules (architecture §8)
 export {
     computeFootprintTiles,
+    computePlacedFootprint,
     computeWorldPorts,
     neighbourAcross,
     oppositeSide,

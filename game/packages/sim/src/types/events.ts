@@ -4,6 +4,7 @@
 
 import type { Command } from './commands';
 import type { ChunkCoord, Rotation, TileCoord } from './coords';
+import type { ItemKey } from './item';
 import type { StructureKey } from './structure';
 
 /**
@@ -16,6 +17,8 @@ export enum RejectReason {
     Empty,
     NotRemovable,
     NotPlaceable,
+    /** The structure extracts resources, but there is none under its anchor tile. */
+    NoResource,
 }
 
 /**
@@ -51,6 +54,10 @@ export type Event =
       }
     | {
           type: EventType.Delivered;
+          structureId: number;
+          itemKey: ItemKey;
+          /** Total of this item delivered so far, including this one. */
+          total: number;
       }
     | {
           type: EventType.StructureRemoved;

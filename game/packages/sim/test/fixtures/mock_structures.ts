@@ -114,6 +114,26 @@ export const MOCK_PICKY_BELT: StructureDefinition = {
     ],
 };
 
+/** Belt slower than the extractor, so a line of them is always saturated. */
+export const MOCK_SLOW_BELT: StructureDefinition = {
+    ...MOCK_BELT,
+    id: 9,
+    key: 'test-slow-belt',
+    transport: { transitTicks: 4 },
+};
+
+/** Core-like sink: takes every item on its north edge and counts it as delivered. */
+export const MOCK_SINK: StructureDefinition = {
+    id: 10,
+    key: 'test-sink',
+    footprint: [{ x: 0, y: 0 }],
+    ports: [{ tile: { x: 0, y: 0 }, side: 0, type: 'input' }],
+    deletable: false,
+    placeable: true,
+    rotatable: false,
+    intake: 'deliver',
+};
+
 /**
  * All mock structures in an array for easy iteration.
  */
@@ -126,4 +146,6 @@ export const ALL_MOCK_STRUCTURES: StructureDefinition[] = [
     MOCK_BELT,
     MOCK_EXTRACTOR,
     MOCK_PICKY_BELT,
+    MOCK_SLOW_BELT,
+    MOCK_SINK,
 ];

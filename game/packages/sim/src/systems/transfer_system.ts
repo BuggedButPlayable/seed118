@@ -3,22 +3,23 @@ import { getStructureDefinitionById } from '../defs/structure_registry';
 import type { GridModel } from '../grid/grid_model';
 import { computeWorldPorts, isSameCoord, neighbourAcross, oppositeSide } from '../grid/grid_math';
 import type { WorldState } from '../state/world_state';
-import type { StructureId } from '../types/ids';
+import { EventType } from '../types/events';
+import type { Event } from '../types/events';
+import type { DefId, StructureId } from '../types/ids';
 import type { ItemKey } from '../types/item';
 import type { StructureDefinition, StructurePort, StructureRecord } from '../types/structure';
 
 interface TransferContext {
     state: WorldState;
     grid: GridModel;
+    outEvents: Event[];
     /** Structures that already had their turn this tick. */
     visited: Set<StructureId>;
 }
 
-/** A structure that may take the sender's item, given room. */
-interface Receiver {
-    id: StructureId;
-    transitTicks: number;
-}
+/** A structure that may take the sender's item: into its slot (given room) or straight in (delivery). */
+type Receiver =
+    { kind: 'slot'; id: StructureId; transitTicks: number } | { kind: 'deliver'; id: StructureId };
 
 interface ChainLink {
     senderId: StructureId;
@@ -34,8 +35,8 @@ interface ChainLink {
  * which order they were built. Every structure moves at most one item per tick (architecture §5.3).
  */
 export class TransferSystem {
-    public tick(state: WorldState, grid: GridModel): void {
-        const context: TransferContext = { state, grid, visited: new Set() };
+    public tick(state: WorldState, grid: GridModel, outEvents: Event[]): void {
+        const context: TransferContext = { state, grid, outEvents, visited: new Set() };
         for (const [senderId] of state.itemSlots.entries()) {
             this.pushChain(context, senderId);
         }
@@ -86,14 +87,29 @@ export class TransferSystem {
             return;
         }
         context.state.itemSlots.delete(link.senderId);
+        if (receiver.kind === 'deliver') {
+            this.deliver(context, receiver.id, slot.itemId);
+            return;
+        }
         context.state.itemSlots.set(receiver.id, {
             itemId: slot.itemId,
             ticksRemaining: receiver.transitTicks,
         });
     }
 
+    private deliver(context: TransferContext, structureId: StructureId, itemId: DefId): void {
+        const total = (context.state.deliveredCounts.get(itemId) ?? 0) + 1;
+        context.state.deliveredCounts.set(itemId, total);
+        context.outEvents.push({
+            type: EventType.Delivered,
+            structureId,
+            itemKey: getItemDefinitionById(itemId).key,
+            total,
+        });
+    }
+
     private hasRoom(context: TransferContext, receiver: Receiver): boolean {
-        return !context.state.itemSlots.has(receiver.id);
+        return receiver.kind === 'deliver' || !context.state.itemSlots.has(receiver.id);
     }
 
     /** Receivers connected to the sender's output ports that accept its item, in port order. */
@@ -121,9 +137,6 @@ export class TransferSystem {
             return null;
         }
         const definition = getStructureDefinitionById(record.definitionId);
-        if (!definition.transport) {
-            return null;
-        }
         const side = oppositeSide(outputPort.side);
         const hasAcceptingInput = portsOf(record, definition).some(
             (port) =>
@@ -132,8 +145,19 @@ export class TransferSystem {
                 isSameCoord(port.tile, tile) &&
                 acceptsItem(port, itemKey),
         );
-        return hasAcceptingInput ? { id: record.id, transitTicks: definition.transport.transitTicks } : null;
+        return hasAcceptingInput ? receiverOf(record.id, definition) : null;
     }
+}
+
+/** How a structure takes items, read from its definition; null if it takes none. */
+function receiverOf(id: StructureId, definition: StructureDefinition): Receiver | null {
+    if (definition.intake === 'deliver') {
+        return { kind: 'deliver', id };
+    }
+    if (definition.transport) {
+        return { kind: 'slot', id, transitTicks: definition.transport.transitTicks };
+    }
+    return null;
 }
 
 function portsOf(structure: StructureRecord, definition: StructureDefinition): StructurePort[] {

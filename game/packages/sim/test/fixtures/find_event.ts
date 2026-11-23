@@ -16,3 +16,11 @@ export function findEvent<T extends EventType>(
     }
     return found;
 }
+
+/** Returns every event of the given type, narrowed to that type, in order. */
+export function findEvents<T extends EventType>(
+    events: readonly Event[],
+    type: T,
+): Extract<Event, { type: T }>[] {
+    return events.filter((event): event is Extract<Event, { type: T }> => event.type === type);
+}
