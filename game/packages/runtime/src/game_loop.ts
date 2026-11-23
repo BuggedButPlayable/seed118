@@ -38,6 +38,19 @@ export class GameLoop {
         requestAnimationFrame(this.frame);
     }
 
+    /** Swaps the world (e.g. a new world) and brings everything that mirrors it up to date. */
+    public replaceWorld(change: () => void): void {
+        change();
+        this.syncWithWorld();
+    }
+
+    /** Redraws the view, resets the HUD and re-sends the focus chunk from the current world. */
+    public syncWithWorld(): void {
+        this.focusChunk = null;
+        this.options.renderer.rebuild(this.options.sim);
+        this.options.deliveryCounter.reset(this.options.sim);
+    }
+
     private readonly frame = (nowMs: number): void => {
         const elapsedMs = this.lastFrameMs === null ? 0 : nowMs - this.lastFrameMs;
         this.lastFrameMs = nowMs;

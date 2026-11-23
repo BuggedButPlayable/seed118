@@ -6,3 +6,4 @@ export { BuildBar } from './build_bar';
 export { DeliveryCounter, formatDeliveries } from './delivery_counter';
 export { ToolState } from './tool_state';
 export type { BuildTool } from './tool_state';
+export { WorldMenu } from './world_menu';

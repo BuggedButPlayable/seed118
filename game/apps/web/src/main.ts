@@ -1,11 +1,19 @@
 /**
- * Browser entry point: wires simulation, view, UI, input and loop together.
+ * Browser entry point: wires simulation, view, UI, input, loop and saving together.
  */
 
 import { Camera, WorldRenderer } from '@seed118/render';
-import { BuildInput, CameraControls, GameLoop } from '@seed118/runtime';
+import type { ViewportSize } from '@seed118/render';
+import {
+    BROKEN_SAVE_STORAGE_KEY,
+    BuildInput,
+    CameraControls,
+    GameLoop,
+    SaveStorage,
+    startAutosave,
+} from '@seed118/runtime';
 import { SimCommandQueue, SimWorld } from '@seed118/sim';
-import { BuildBar, DeliveryCounter, ToolState } from '@seed118/ui';
+import { BuildBar, DeliveryCounter, ToolState, WorldMenu } from '@seed118/ui';
 
 /** M1 always starts the same world; picking a seed comes later. */
 const NEW_WORLD_SEED = 118;
@@ -14,19 +22,23 @@ const START_VIEW_CENTER = { x: 1, y: 1 };
 
 async function startGame(host: HTMLElement): Promise<void> {
     const sim = new SimWorld();
-    sim.startNewWorld(NEW_WORLD_SEED);
+    const saves = new SaveStorage(window.localStorage);
+    const restored = saves.restoreInto(sim);
+    if (restored.kind !== 'loaded') {
+        sim.startNewWorld(NEW_WORLD_SEED);
+    }
 
     const renderer = await WorldRenderer.create(host);
-    renderer.rebuild(sim);
     const camera = new Camera(START_VIEW_CENTER);
     const commands = new SimCommandQueue();
     const tools = new ToolState();
     new BuildBar(tools).mount(host);
     const deliveryCounter = new DeliveryCounter();
     deliveryCounter.mount(host);
-    deliveryCounter.reset(sim);
+    const worldMenu = new WorldMenu();
+    worldMenu.mount(host);
 
-    const viewportSize = (): ReturnType<WorldRenderer['viewportSize']> => renderer.viewportSize();
+    const viewportSize = (): ViewportSize => renderer.viewportSize();
     const controls = new CameraControls({
         canvas: renderer.canvas,
         camera,
@@ -34,8 +46,7 @@ async function startGame(host: HTMLElement): Promise<void> {
         isLeftDragPan: () => tools.tool.kind === 'none',
     });
     const buildInput = new BuildInput({ canvas: renderer.canvas, camera, viewportSize, tools, commands });
-
-    new GameLoop({
+    const loop = new GameLoop({
         sim,
         renderer,
         camera,
@@ -43,7 +54,23 @@ async function startGame(host: HTMLElement): Promise<void> {
         commands,
         preview: () => buildInput.preview(),
         deliveryCounter,
-    }).start();
+    });
+
+    loop.syncWithWorld();
+    worldMenu.onNewWorld(() =>
+        loop.replaceWorld(() => {
+            saves.clear();
+            sim.startNewWorld(NEW_WORLD_SEED);
+        }),
+    );
+    if (restored.kind === 'broken') {
+        worldMenu.showNotice(
+            `The saved world could not be loaded (${restored.reason}). A new world was started; ` +
+                `the old save is kept in browser storage under "${BROKEN_SAVE_STORAGE_KEY}".`,
+        );
+    }
+    startAutosave(sim, saves);
+    loop.start();
 }
 
 const host = document.getElementById('game');

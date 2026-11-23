@@ -15,6 +15,9 @@ game/
 └── vitest.config.ts    tests and coverage thresholds
 ```
 
+The game saves to the browser's localStorage (`seed118.save`) every 5 seconds and when the tab is hidden or
+closed; it loads that save on start. "New world" (top right) discards it.
+
 Layer rules (who may import whom) are in [`docs/seed118_coding_rules.md`](../docs/seed118_coding_rules.md) §2.
 `sim` is type-checked without DOM types; the browser packages each have their own `tsconfig.json` with DOM.
 
