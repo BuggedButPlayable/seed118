@@ -1,8 +1,9 @@
-import { generateNewChunk } from '../core/world_generator';
-import { GridModel } from '../grid/grid_model';
+import { createWorldGrid } from '../core/world_generator';
 import { isSameCoord } from '../grid/grid_math';
 import { byId } from '../core/ordering';
-import { loadSaveGameV1, saveSaveGameV1 } from '../save/save_v1';
+import { parseSave } from '../save/parse_save';
+import { loadSaveV2, writeSaveV2 } from '../save/save_v2';
+import type { SaveGameV2 } from '../save/save_v2';
 import { WorldState } from '../state/world_state';
 import { CommandSystem } from '../systems/command_system';
 import { ExtractionSystem } from '../systems/extraction_system';
@@ -19,7 +20,6 @@ import type { Command } from '../types/commands';
 import { EventType } from '../types/events';
 import type { Event } from '../types/events';
 import type { ItemKey, ItemSlotSnapshot } from '../types/item';
-import type { SaveGameV1 } from '../types/save_v1';
 import type { StructureRecord } from '../types/structure';
 
 /**
@@ -28,15 +28,11 @@ import type { StructureRecord } from '../types/structure';
  */
 export class SimWorld {
     private worldState = new WorldState();
-    private gridModel: GridModel;
+    private gridModel = createWorldGrid(this.worldState);
     private readonly commandSystem = new CommandSystem();
     private readonly extractionSystem = new ExtractionSystem();
     private readonly transportSystem = new TransportSystem();
     private readonly transferSystem = new TransferSystem();
-
-    constructor() {
-        this.gridModel = this.createGrid();
-    }
 
     /**
      * Advances the simulation by one tick. Fixed system order:
@@ -65,7 +61,7 @@ export class SimWorld {
     public reset(worldSeed: number): void {
         this.worldState = new WorldState();
         this.worldState.worldSeed = worldSeed;
-        this.gridModel = this.createGrid();
+        this.gridModel = createWorldGrid(this.worldState);
     }
 
     /**
@@ -90,17 +86,20 @@ export class SimWorld {
         }
     }
 
-    /** Serializes everything that cannot be regenerated from the seed. */
-    public saveV1(): SaveGameV1 {
-        return saveSaveGameV1(this.worldState, this.gridModel);
+    /** Serializes everything that cannot be regenerated from the seed (current format, v2). */
+    public saveV2(): SaveGameV2 {
+        return writeSaveV2(this.worldState, this.gridModel);
     }
 
-    /** Replaces the current world with a saved one. */
-    public loadV1(save: SaveGameV1): void {
-        const { state, grid } = loadSaveGameV1(save);
+    /**
+     * Replaces the current world with a saved one. Accepts every supported version (older ones are migrated).
+     * @param data Save data of unknown shape, e.g. parsed JSON from storage.
+     * @throws If the data is not a valid save; the current world is then left unchanged.
+     */
+    public loadSave(data: unknown): void {
+        const { state, grid } = loadSaveV2(parseSave(data));
         this.worldState = state;
         this.gridModel = grid;
-        this.attachChunkGenerator(this.gridModel);
     }
 
     // Snapshot getters (read-only access for view and tests, architecture §11)
@@ -146,18 +145,6 @@ export class SimWorld {
 
     public getResourceIdAt(tile: TileCoord): number {
         return this.gridModel.getResourceIdAt(tile);
-    }
-
-    private createGrid(): GridModel {
-        const grid = new GridModel();
-        this.attachChunkGenerator(grid);
-        return grid;
-    }
-
-    private attachChunkGenerator(grid: GridModel): void {
-        grid.setChunkGenerationCallback((_chunk, chunkCoord) => {
-            generateNewChunk(chunkCoord, grid, this.worldState);
-        });
     }
 
     private applyPendingFocusChange(outEvents: Event[]): void {

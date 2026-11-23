@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { SimWorld } from '../../../src/sim/sim_world';
 import { restoreMockRegistry, setupMockRegistry } from '../../fixtures/mock_registry';
-import { runPlacementScript } from '../../fixtures/scripts';
+import { runPlacementScript, runTransportScript } from '../../fixtures/scripts';
 
 const WORLD_SEED = 424242;
 const FNV_OFFSET_BASIS = 0x811c9dc5;
@@ -18,22 +18,17 @@ function fnv1a32(input: string): number {
     return hash >>> 0;
 }
 
-/** Hash of everything that defines the world state from the outside. */
+/** Hash of the save: it holds every piece of state that cannot be regenerated from the seed. */
 function hashWorld(sim: SimWorld): number {
-    const structures = sim.getStructures().map((structure) => ({
-        id: structure.id,
-        definitionId: structure.definitionId,
-        x: structure.position.x,
-        y: structure.position.y,
-        rotation: structure.rotation,
-    }));
-    return fnv1a32(JSON.stringify({ seed: sim.getWorldSeed(), tick: sim.getTickIndex(), structures }));
+    return fnv1a32(JSON.stringify(sim.saveV2()));
 }
 
+/** Structures plus items moving and being delivered. */
 function createScriptedWorld(): SimWorld {
     const sim = new SimWorld();
     sim.reset(WORLD_SEED);
     runPlacementScript(sim);
+    runTransportScript(sim);
     return sim;
 }
 
@@ -54,7 +49,7 @@ describe('Determinism gate', () => {
         const original = createScriptedWorld();
         const reloaded = new SimWorld();
 
-        reloaded.loadV1(original.saveV1());
+        reloaded.loadSave(original.saveV2());
 
         expect(hashWorld(reloaded)).toBe(hashWorld(original));
     });

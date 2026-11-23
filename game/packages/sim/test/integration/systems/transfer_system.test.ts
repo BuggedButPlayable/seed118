@@ -8,47 +8,21 @@ import type { ItemSlotSnapshot } from '../../../src/types/item';
 import { placeCommand, removeCommand } from '../../fixtures/commands';
 import { findEvent, findEvents } from '../../fixtures/find_event';
 import { restoreMockRegistry, setupMockRegistry } from '../../fixtures/mock_registry';
-import {
-    MOCK_BELT,
-    MOCK_EXTRACTOR,
-    MOCK_PICKY_BELT,
-    MOCK_SINK,
-    MOCK_SLOW_BELT,
-} from '../../fixtures/mock_structures';
+import { MOCK_BELT, MOCK_EXTRACTOR, MOCK_PICKY_BELT, MOCK_SLOW_BELT } from '../../fixtures/mock_structures';
 import { findEmptyTile, findResourceTile } from '../../fixtures/resource_tiles';
 import { createFocusedWorld, run } from '../../fixtures/scripts';
+import { below, buildLine, LINE_LENGTH, placeSinkBelow } from '../../fixtures/transport_line';
+import type { BuildOrder } from '../../fixtures/transport_line';
 
 const WORLD_SEED = 118;
-const LINE_LENGTH = 3;
 /** Long enough to fill the whole line (extractor + belts) several times over. */
 const FILL_TICKS = 60;
 
 const createWorld = (): SimWorld => createFocusedWorld(WORLD_SEED);
 
-const below = (tile: TileCoord, steps: number): TileCoord => ({ x: tile.x, y: tile.y + steps });
-
 function slotAt(sim: SimWorld, tile: TileCoord): ItemSlotSnapshot | undefined {
     const structureId = sim.getStructureIdAt(tile);
     return sim.getItemSlots().find((slot) => slot.structureId === structureId);
-}
-
-type BuildOrder = 'top-down' | 'bottom-up';
-
-/** Extractor on a resource tile with a straight belt line below it (one free tile left for a sink). */
-function buildLine(sim: SimWorld, order: BuildOrder, beltId = MOCK_BELT.id): TileCoord[] {
-    const source = findResourceTile(sim, LINE_LENGTH + 1);
-    const belts = Array.from({ length: LINE_LENGTH }, (_, index) => below(source, index + 1));
-    const ordered = order === 'top-down' ? belts : [...belts].reverse();
-    sim.tick(
-        [placeCommand(MOCK_EXTRACTOR.id, source), ...ordered.map((tile) => placeCommand(beltId, tile))],
-        [],
-    );
-    return [source, ...belts];
-}
-
-/** Ends the line in a sink that takes every item. */
-function placeSinkBelow(sim: SimWorld, line: readonly TileCoord[]): void {
-    sim.tick([placeCommand(MOCK_SINK.id, below(line.at(-1)!, 1))], []);
 }
 
 describe('Extraction and transfer (integration)', () => {

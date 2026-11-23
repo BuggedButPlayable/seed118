@@ -4,6 +4,7 @@ import type { Command } from '../../src/types/commands';
 import type { Event } from '../../src/types/events';
 import { focusCommand, placeCommand } from './commands';
 import { MOCK_MULTITILE, MOCK_SIMPLE_STRUCTURE } from './mock_structures';
+import { buildLine, placeSinkBelow } from './transport_line';
 
 export const SCRIPT_SIMPLE_ANCHOR: TileCoord = { x: 10, y: 10 };
 export const SCRIPT_MULTITILE_ANCHOR: TileCoord = { x: 13, y: 10 };
@@ -38,4 +39,17 @@ export function runPlacementScript(sim: SimWorld): Event[] {
     sim.tick([placeCommand(MOCK_SIMPLE_STRUCTURE.id, SCRIPT_SIMPLE_ANCHOR)], events);
     sim.tick([placeCommand(MOCK_MULTITILE.id, SCRIPT_MULTITILE_ANCHOR)], events);
     return events;
+}
+
+/** Long enough for deliveries, short enough that items are still on the belts. */
+const TRANSPORT_SCRIPT_TICKS = 25;
+
+/**
+ * Extractor → belts → sink in chunk (0, 0), run until items are in flight and some are delivered.
+ * Needs the mock registry. Shared by save and determinism tests.
+ */
+export function runTransportScript(sim: SimWorld): void {
+    sim.tick([focusCommand({ x: 0, y: 0 })], []);
+    placeSinkBelow(sim, buildLine(sim, 'top-down'));
+    run(sim, TRANSPORT_SCRIPT_TICKS);
 }

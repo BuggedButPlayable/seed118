@@ -46,5 +46,5 @@ export type {
 } from './types/structure';
 export type { ResourceDefinition } from './types/resource';
 export type { ItemDefinition, ItemKey, ItemSlotSnapshot } from './types/item';
-export { SAVE_V1_VERSION } from './save/save_v1';
-export type { SaveGameV1, SaveStructureV1 } from './save/save_v1';
+export { SAVE_V2_VERSION } from './save/save_v2';
+export type { SaveGameV2 } from './save/save_v2';
