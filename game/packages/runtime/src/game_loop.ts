@@ -1,6 +1,7 @@
 import { CommandType, SIM_TICKS_PER_SECOND, tileToChunk } from '@seed118/sim';
 import type { ChunkCoord, Event, SimCommandQueue, SimWorld } from '@seed118/sim';
 import type { BuildPreview, Camera, WorldRenderer } from '@seed118/render';
+import type { DeliveryCounter } from '@seed118/ui';
 
 import type { CameraControls } from './camera_controls';
 import { FixedStepClock } from './fixed_step_clock';
@@ -19,6 +20,7 @@ export interface GameLoopOptions {
     commands: SimCommandQueue;
     /** The ghost to draw this frame. */
     preview: () => BuildPreview | null;
+    deliveryCounter: DeliveryCounter;
 }
 
 /**
@@ -46,7 +48,11 @@ export class GameLoop {
         for (let step = 0; step < steps; step++) {
             this.tickOnce();
         }
-        this.options.renderer.draw(this.options.sim, this.options.camera, this.options.preview());
+        this.options.renderer.draw(this.options.sim, {
+            camera: this.options.camera,
+            preview: this.options.preview(),
+            stepProgress: this.clock.stepProgress,
+        });
         requestAnimationFrame(this.frame);
     };
 
@@ -54,6 +60,7 @@ export class GameLoop {
         const events: Event[] = [];
         this.options.sim.tick(this.options.commands.drainCommands(), events);
         this.options.renderer.applyEvents(this.options.sim, events);
+        this.options.deliveryCounter.applyEvents(events);
     }
 
     /** Asks the simulation to generate chunks around the camera whenever it enters a new chunk. */

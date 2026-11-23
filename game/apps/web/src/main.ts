@@ -5,7 +5,7 @@
 import { Camera, WorldRenderer } from '@seed118/render';
 import { BuildInput, CameraControls, GameLoop } from '@seed118/runtime';
 import { SimCommandQueue, SimWorld } from '@seed118/sim';
-import { BuildBar, ToolState } from '@seed118/ui';
+import { BuildBar, DeliveryCounter, ToolState } from '@seed118/ui';
 
 /** M1 always starts the same world; picking a seed comes later. */
 const NEW_WORLD_SEED = 118;
@@ -22,6 +22,9 @@ async function startGame(host: HTMLElement): Promise<void> {
     const commands = new SimCommandQueue();
     const tools = new ToolState();
     new BuildBar(tools).mount(host);
+    const deliveryCounter = new DeliveryCounter();
+    deliveryCounter.mount(host);
+    deliveryCounter.reset(sim);
 
     const viewportSize = (): ReturnType<WorldRenderer['viewportSize']> => renderer.viewportSize();
     const controls = new CameraControls({
@@ -32,7 +35,15 @@ async function startGame(host: HTMLElement): Promise<void> {
     });
     const buildInput = new BuildInput({ canvas: renderer.canvas, camera, viewportSize, tools, commands });
 
-    new GameLoop({ sim, renderer, camera, controls, commands, preview: () => buildInput.preview() }).start();
+    new GameLoop({
+        sim,
+        renderer,
+        camera,
+        controls,
+        commands,
+        preview: () => buildInput.preview(),
+        deliveryCounter,
+    }).start();
 }
 
 const host = document.getElementById('game');

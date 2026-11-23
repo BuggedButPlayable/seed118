@@ -4,11 +4,19 @@ import { Application, Container } from 'pixi.js';
 
 import type { Camera, ViewportSize } from './camera';
 import { ChunkLayer } from './chunk_layer';
+import { ItemLayer } from './item_layer';
 import { PreviewLayer } from './preview_layer';
 import type { BuildPreview } from './preview_layer';
 import { StructureLayer } from './structure_layer';
 import { SPACE_COLOR } from './palette';
 import type { SimView } from './sim_view';
+
+/** Everything a frame needs besides the simulation. */
+export interface FrameState {
+    camera: Camera;
+    preview: BuildPreview | null;
+    stepProgress: number;
+}
 
 /**
  * Owns the PixiJS application and projects simulation snapshots onto the screen.
@@ -18,12 +26,14 @@ export class WorldRenderer {
     private readonly world = new Container();
     private readonly chunkLayer = new ChunkLayer();
     private readonly structureLayer = new StructureLayer();
+    private readonly itemLayer = new ItemLayer();
     private readonly previewLayer = new PreviewLayer();
 
     private constructor(private readonly app: Application) {
         this.world.addChild(
             this.chunkLayer.container,
             this.structureLayer.container,
+            this.itemLayer.graphics,
             this.previewLayer.graphics,
         );
         this.app.stage.addChild(this.world);
@@ -59,9 +69,14 @@ export class WorldRenderer {
         this.structureLayer.redrawAll(view);
     }
 
-    /** Draws one frame from the camera's point of view, with the ghost of the active tool. */
-    public draw(view: SimView, camera: Camera, preview: BuildPreview | null): void {
-        this.previewLayer.update(view, preview);
+    /**
+     * Draws one frame from the camera's point of view, with the ghost of the active tool.
+     * `frame.stepProgress` (0..1, progress towards the next tick) lets items glide between ticks.
+     */
+    public draw(view: SimView, frame: FrameState): void {
+        const { camera } = frame;
+        this.itemLayer.update(view, frame.stepProgress);
+        this.previewLayer.update(view, frame.preview);
         const origin = camera.worldOrigin(this.viewportSize());
         this.world.position.set(origin.x, origin.y);
         this.world.scale.set(camera.zoom);

@@ -42,3 +42,13 @@ export const INPUT_PORT_COLOR = 0x6f9bff;
 export const OUTPUT_PORT_COLOR = 0xffb347;
 export const VALID_PREVIEW_COLOR = 0x4fd18b;
 export const INVALID_PREVIEW_COLOR = 0xff5a5a;
+
+/** Item colours by item key (game design §9: elements distinguishable at a glance). */
+const ITEM_COLORS: Readonly<Record<string, number>> = {
+    hydrogen: 0xdfe8ff,
+};
+const FALLBACK_ITEM_COLOR = 0xffffff;
+
+export function itemColor(itemKey: string): number {
+    return ITEM_COLORS[itemKey] ?? FALLBACK_ITEM_COLOR;
+}

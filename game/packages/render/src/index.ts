@@ -7,3 +7,4 @@ export type { ScreenPoint, ViewportSize } from './camera';
 export type { BuildPreview } from './preview_layer';
 export type { SimView } from './sim_view';
 export { WorldRenderer } from './world_renderer';
+export type { FrameState } from './world_renderer';

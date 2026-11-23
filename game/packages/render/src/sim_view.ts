@@ -6,5 +6,10 @@ import type { SimWorld } from '@seed118/sim';
  */
 export type SimView = Pick<
     SimWorld,
-    'checkPlacement' | 'getChunkCoords' | 'getResourceIdAt' | 'getStructureIdAt' | 'getStructures'
+    | 'checkPlacement'
+    | 'getChunkCoords'
+    | 'getItemSlots'
+    | 'getResourceIdAt'
+    | 'getStructureIdAt'
+    | 'getStructures'
 >;
