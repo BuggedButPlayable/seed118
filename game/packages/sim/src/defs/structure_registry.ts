@@ -1,12 +1,12 @@
 /**
  * Registry for all built-in structure definitions.
- * 
+ *
  * Collects and exposes structure definitions for easy access.
  */
 
-import { DefId } from "../types/ids";
-import { CORE_DEFINITION, BELT_DEFINITION, COLLECTOR_DEFINITION } from "./structure_def";
-import { StructureDefinition } from "../types/structure";
+import type { DefId } from '../types/ids';
+import { CORE_DEFINITION, BELT_DEFINITION, COLLECTOR_DEFINITION } from './structure_def';
+import type { StructureDefinition } from '../types/structure';
 
 export const STRUCTURE_DEFINITIONS: readonly StructureDefinition[] = Object.freeze([
     CORE_DEFINITION,
@@ -27,7 +27,7 @@ export const getStructureDefinitionById = (id: DefId): StructureDefinition => {
         }
     }
     throw new Error(`No structure definition found for id: ${id}`);
-}
+};
 
 /**
  * Retrieves a structure definition by its key.
@@ -42,4 +42,4 @@ export const getStructureDefinitionByKey = (key: string): StructureDefinition =>
         }
     }
     throw new Error(`No structure definition found for key: ${key}`);
-}
+};

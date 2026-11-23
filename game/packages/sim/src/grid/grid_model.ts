@@ -1,15 +1,15 @@
-import { RESOURCE_ID_NONE, STRUCTURE_ID_NONE } from "../core/constants";
-import { ChunkCoord, TileCoord } from "../types";
-import { Chunk } from "./chunk";
-import { chunkKey, parseChunkKey, tileToChunk, tileToLocal } from "./grid_math";
+import { RESOURCE_ID_NONE, STRUCTURE_ID_NONE } from '../core/constants';
+import type { ChunkCoord, TileCoord } from '../types';
+import { Chunk } from './chunk';
+import { chunkKey, parseChunkKey, tileToChunk, tileToLocal } from './grid_math';
 
 /**
  * Represents the grid model of the game world, managing chunks and their data.
  */
 export class GridModel {
-    private chunks: Map<string, Chunk> = new Map();
+    private readonly chunks: Map<string, Chunk> = new Map();
 
-    private persistentChunks: Set<string> = new Set();
+    private readonly persistentChunks: Set<string> = new Set();
 
     private chunkGenerationCallback: ((chunk: Chunk, coord: ChunkCoord) => void) | null = null;
 
@@ -24,7 +24,7 @@ export class GridModel {
     /**
      * Checks if a chunk exists in the grid model.
      * @param chunkKey - The unique key of the chunk to check.
-     * @returns 
+     * @returns
      */
     public hasChunk(chunkCoord: ChunkCoord): boolean {
         return this.chunks.has(chunkKey(chunkCoord));
@@ -54,7 +54,7 @@ export class GridModel {
         }
 
         const newChunk = new Chunk(chunkCoord);
-        
+
         this.chunks.set(key, newChunk);
 
         if (this.chunkGenerationCallback) {
@@ -89,16 +89,16 @@ export class GridModel {
     /**
      * Retrieves the structure ID at the specified tile coordinate.
      * @param tileCoord The tile coordinate to retrieve the structure ID from.
-     * @returns The structure ID at the specified tile coordinate, or ENTITY_ID_NONE if none exists.
+     * @returns The structure ID at the specified tile coordinate, or STRUCTURE_ID_NONE if none exists.
      */
-    public getStructureIdAt(tileCoord: TileCoord): number | null {
+    public getStructureIdAt(tileCoord: TileCoord): number {
         const chunkCoord = tileToChunk(tileCoord);
         const chunk = this.getChunk(chunkCoord);
 
         if (!chunk) return STRUCTURE_ID_NONE;
 
         const local = tileToLocal(tileCoord);
-        return chunk.getStructureId(local);
+        return chunk.getStructureAt(local);
     }
 
     /**
@@ -126,16 +126,16 @@ export class GridModel {
     /**
      * Retrieves the resource ID at the specified tile coordinate.
      * @param tileCoord The tile coordinate to retrieve the resource ID from.
-     * @returns The resource ID at the specified tile coordinate, or ENTITY_ID_NONE if none exists.
+     * @returns The resource ID at the specified tile coordinate, or RESOURCE_ID_NONE if none exists.
      */
-    public getResourceIdAt(tileCoord: TileCoord): number | null {
+    public getResourceIdAt(tileCoord: TileCoord): number {
         const chunkCoord = tileToChunk(tileCoord);
         const chunk = this.getChunk(chunkCoord);
 
         if (!chunk) return RESOURCE_ID_NONE;
 
         const local = tileToLocal(tileCoord);
-        return chunk.getResourceId(local);
+        return chunk.getResourceAt(local);
     }
 
     /**

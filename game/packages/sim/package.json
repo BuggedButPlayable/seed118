@@ -1,0 +1,9 @@
+{
+  "name": "@seed118/sim",
+  "private": true,
+  "type": "module",
+  "description": "Deterministic, headless simulation. Owns all world state.",
+  "exports": {
+    ".": "./src/index.ts"
+  }
+}

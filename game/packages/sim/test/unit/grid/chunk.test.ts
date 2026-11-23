@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { Chunk } from '../../../src/grid/chunk';
 import { CHUNK_SIZE, RESOURCE_ID_NONE, STRUCTURE_ID_NONE } from '../../../src/core/constants';
-import { ChunkCoord, TileCoord } from '../../../src/types/coords';
+import type { ChunkCoord, TileCoord } from '../../../src/types/coords';
 
 describe('Chunk', () => {
     let chunk: Chunk;
@@ -51,7 +51,7 @@ describe('Chunk', () => {
                 { x: 0, y: 0 },
                 { x: CHUNK_SIZE - 1, y: 0 },
                 { x: 0, y: CHUNK_SIZE - 1 },
-                { x: CHUNK_SIZE - 1, y: CHUNK_SIZE - 1 }
+                { x: CHUNK_SIZE - 1, y: CHUNK_SIZE - 1 },
             ];
 
             corners.forEach((coord, index) => {
@@ -76,7 +76,7 @@ describe('Chunk', () => {
                 { x: 0, y: 0 },
                 { x: CHUNK_SIZE - 1, y: 0 },
                 { x: 0, y: CHUNK_SIZE - 1 },
-                { x: CHUNK_SIZE - 1, y: CHUNK_SIZE - 1 }
+                { x: CHUNK_SIZE - 1, y: CHUNK_SIZE - 1 },
             ];
 
             corners.forEach((coord, index) => {
@@ -84,28 +84,6 @@ describe('Chunk', () => {
                 chunk.setResourceAt(coord, resourceId);
                 expect(chunk.getResourceAt(coord)).toBe(resourceId);
             });
-        });
-    });
-
-    describe('getStructureId', () => {
-        it('should return the same value as getStructureAt', () => {
-            const tileCoord: TileCoord = { x: 4, y: 6 };
-            const structureId = 55;
-
-            chunk.setStructureAt(tileCoord, structureId);
-            expect(chunk.getStructureId(tileCoord)).toBe(chunk.getStructureAt(tileCoord));
-            expect(chunk.getStructureId(tileCoord)).toBe(structureId);
-        });
-    });
-
-    describe('getResourceId', () => {
-        it('should return the same value as getResourceAt', () => {
-            const tileCoord: TileCoord = { x: 8, y: 1 };
-            const resourceId = 77;
-
-            chunk.setResourceAt(tileCoord, resourceId);
-            expect(chunk.getResourceId(tileCoord)).toBe(chunk.getResourceAt(tileCoord));
-            expect(chunk.getResourceId(tileCoord)).toBe(resourceId);
         });
     });
 

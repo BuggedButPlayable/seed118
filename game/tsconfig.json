@@ -1,0 +1,7 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "types": []
+  },
+  "include": ["packages/*/src", "packages/*/test", "vitest.config.ts", "eslint.config.mjs"]
+}

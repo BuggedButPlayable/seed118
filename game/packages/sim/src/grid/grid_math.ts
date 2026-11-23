@@ -3,8 +3,8 @@
  * rotating offsets, and computing structure footprints.
  */
 
-import { TileCoord, ChunkCoord, Rotation } from "../types";
-import { CHUNK_SIZE } from "../core/constants";
+import type { TileCoord, ChunkCoord, Rotation } from '../types';
+import { CHUNK_SIZE } from '../core/constants';
 
 /**
  * Converts tile coordinates to chunk coordinates.
@@ -14,7 +14,7 @@ import { CHUNK_SIZE } from "../core/constants";
 export function tileToChunk(tile: TileCoord): ChunkCoord {
     return {
         x: Math.floor(tile.x / CHUNK_SIZE),
-        y: Math.floor(tile.y / CHUNK_SIZE)
+        y: Math.floor(tile.y / CHUNK_SIZE),
     };
 }
 
@@ -26,8 +26,8 @@ export function tileToChunk(tile: TileCoord): ChunkCoord {
 export function tileToLocal(tile: TileCoord): TileCoord {
     return {
         x: floorMod(tile.x, CHUNK_SIZE),
-        y: floorMod(tile.y, CHUNK_SIZE)
-    }
+        y: floorMod(tile.y, CHUNK_SIZE),
+    };
 }
 
 /**
@@ -35,7 +35,7 @@ export function tileToLocal(tile: TileCoord): TileCoord {
  * @param tile - The tile coordinates to convert.
  * @returns An object containing both chunk coordinates and local tile coordinates.
  */
-export function chunkAndLocal(tile: TileCoord): { chunk: ChunkCoord, local: TileCoord } {
+export function chunkAndLocal(tile: TileCoord): { chunk: ChunkCoord; local: TileCoord } {
     const chunk = tileToChunk(tile);
     const local = tileToLocal(tile);
     return { chunk, local };
@@ -67,55 +67,46 @@ export function chunkKey(chunk: ChunkCoord): string {
  * @returns The corresponding chunk coordinates.
  */
 export function parseChunkKey(key: string): ChunkCoord {
-    const [x, y] = key.split(",").map(Number);
+    const [x, y] = key.split(',').map(Number);
+    if (x === undefined || y === undefined || Number.isNaN(x) || Number.isNaN(y)) {
+        throw new Error(`Invalid chunk key: "${key}"`);
+    }
     return { x, y };
 }
 
-/** * Computes the floor modulus of two numbers.
+/**
+ * Computes the floor modulus of two numbers.
  * @param a - The dividend.
  * @param b - The divisor.
  * @returns The floor modulus of a and b.
  */
 export const floorMod = (a: number, b: number): number => {
     return ((a % b) + b) % b;
-}
+};
 
-/** Rotates a set of tile coordinate offsets based on the given rotation in quadrants (90-degree increments).
- * @param offsets - The array of tile coordinate offsets to rotate.
+/** Turns -0 into 0 so rotated offsets compare and serialize cleanly. */
+const withoutNegativeZero = (n: number): number => (n === 0 ? 0 : n);
+
+/**
+ * Rotates tile offsets around the anchor in 90-degree steps (clockwise in screen space).
+ * Simulation and preview must both use this function (architecture §8).
+ * @param offsets - The offsets to rotate. They are not modified.
  * @param rotationQuadrants - The rotation in quadrants (0, 1, 2, or 3).
- * @returns The rotated array of tile coordinate offsets.
+ * @returns New, rotated offsets.
  */
 export function rotateOffsets(offsets: readonly TileCoord[], rotationQuadrants: Rotation): TileCoord[] {
-    var rotation = rotationQuadrants % 4;
-
-    var rotated: TileCoord[] = [];
-    
-    for (var offset of offsets) {
-        var o = offset;
-        var ro: TileCoord
-
-        switch (rotation) {
+    return offsets.map((o) => {
+        switch (rotationQuadrants) {
             case 0:
-                ro = o;
-                break;
+                return { x: o.x, y: o.y };
             case 1:
-                ro = { x: -o.y, y: o.x };
-                break;
+                return { x: withoutNegativeZero(-o.y), y: o.x };
             case 2:
-                ro = { x: -o.x, y: -o.y };
-                break;
+                return { x: withoutNegativeZero(-o.x), y: withoutNegativeZero(-o.y) };
             case 3:
-                ro = { x: o.y, y: -o.x };
-                break;
-            default:
-                ro = o;
+                return { x: o.y, y: withoutNegativeZero(-o.x) };
         }
-        
-        if (ro.x === 0) ro.x = 0;
-        if (ro.y === 0) ro.y = 0;       
-        rotated.push(ro);
-    }
-    return rotated;
+    });
 }
 
 /** Computes the absolute tile coordinates covered by a structure's footprint given its anchor position and offsets.
@@ -123,15 +114,40 @@ export function rotateOffsets(offsets: readonly TileCoord[], rotationQuadrants: 
  * @param offsets - The array of tile coordinate offsets defining the structure's footprint.
  * @returns An array of absolute tile coordinates covered by the structure's footprint.
  */
-export function computeFootprintTiles(anchor: TileCoord, offsets: TileCoord[]): TileCoord[] {
-    var result: TileCoord[] = [];
+export function computeFootprintTiles(anchor: TileCoord, offsets: readonly TileCoord[]): TileCoord[] {
+    const result: TileCoord[] = [];
 
-    for (var offset of offsets) {
+    for (const offset of offsets) {
         result.push({
             x: anchor.x + offset.x,
-            y: anchor.y + offset.y
+            y: anchor.y + offset.y,
         });
     }
 
     return result;
+}
+
+/**
+ * Compares two coordinates by value.
+ * @param a - First coordinate.
+ * @param b - Second coordinate.
+ * @returns True if both point to the same cell.
+ */
+export function isSameCoord(a: TileCoord | ChunkCoord, b: TileCoord | ChunkCoord): boolean {
+    return a.x === b.x && a.y === b.y;
+}
+
+/**
+ * Removes duplicate chunk coordinates and sorts them (x, then y) for deterministic output.
+ * @param coords - The chunk coordinates to deduplicate.
+ * @returns A new, sorted array without duplicates.
+ */
+export function dedupeChunkCoords(coords: readonly ChunkCoord[]): ChunkCoord[] {
+    const out: ChunkCoord[] = [];
+    for (const coord of coords) {
+        if (!out.some((c) => isSameCoord(c, coord))) {
+            out.push(coord);
+        }
+    }
+    return out.sort((a, b) => a.x - b.x || a.y - b.y);
 }

@@ -1,11 +1,12 @@
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import type { Event } from '../../../src/types/events';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import { SimWorld } from "../../../src/sim/sim_world";
-import { CommandType } from "../../../src/types/commands";
-import { MOCK_MULTITILE, MOCK_SIMPLE_STRUCTURE } from "../../fixtures/mock_structures";
-import { restoreMockRegistry, setupMockRegistry } from "../../fixtures/mock_registry";
+import { SimWorld } from '../../../src/sim/sim_world';
+import { CommandType } from '../../../src/types/commands';
+import { MOCK_MULTITILE, MOCK_SIMPLE_STRUCTURE } from '../../fixtures/mock_structures';
+import { restoreMockRegistry, setupMockRegistry } from '../../fixtures/mock_registry';
 
-describe("Determinism gate (test-only hash)", () => {
+describe('Determinism gate (test-only hash)', () => {
     beforeEach(() => {
         setupMockRegistry();
     });
@@ -23,42 +24,20 @@ describe("Determinism gate (test-only hash)", () => {
         return hash >>> 0;
     };
 
-    const getTestDeterminismHash = (sim: any): number => {
-        const worldState = sim.worldState;
-
-        const seed =
-            worldState.worldSeed ??
-            worldState.seed ??
-            worldState.rngSeed ??
-            0;
-
-        const tick =
-            worldState.tick ??
-            worldState.tickIndex ??
-            worldState.currentTick ??
-            0;
-
-        const structures = worldState.structureStore
-            .getAllStructures()
-            .map((s: any) => ({
-                id: s.id,
-                definitionId: s.definitionId,
-                x: s.position?.x ?? s.x,
-                y: s.position?.y ?? s.y,
-                rotation: s.rotation ?? 0,
-            }))
-            .sort((a: any, b: any) => {
-                if (a.id < b.id) return -1;
-                if (a.id > b.id) return 1;
-                return 0;
-            });
-
-        const payload = { seed, tick, structures };
+    const getTestDeterminismHash = (sim: SimWorld): number => {
+        const structures = sim.getStructures().map((s) => ({
+            id: s.id,
+            definitionId: s.definitionId,
+            x: s.position.x,
+            y: s.position.y,
+            rotation: s.rotation,
+        }));
+        const payload = { seed: sim.getWorldSeed(), tick: sim.getTickIndex(), structures };
         return fnv1a32(JSON.stringify(payload));
     };
 
-    const runScript = (sim: SimWorld) => {
-        const events: any[] = [];
+    const runScript = (sim: SimWorld): void => {
+        const events: Event[] = [];
         sim.tick([{ type: CommandType.SetFocusChunk, coord: { x: 0, y: 0 } }], events);
         sim.tick(
             [
@@ -84,7 +63,7 @@ describe("Determinism gate (test-only hash)", () => {
         );
     };
 
-    it("same seed + same command stream => same hash", () => {
+    it('same seed + same command stream => same hash', () => {
         const seed = 424242;
 
         const a = new SimWorld();
@@ -95,13 +74,13 @@ describe("Determinism gate (test-only hash)", () => {
         b.reset(seed);
         runScript(b);
 
-        const hashA = getTestDeterminismHash(a as any);
-        const hashB = getTestDeterminismHash(b as any);
+        const hashA = getTestDeterminismHash(a);
+        const hashB = getTestDeterminismHash(b);
 
         expect(hashA).toBe(hashB);
     });
 
-    it("save -> load preserves hash", () => {
+    it('save -> load preserves hash', () => {
         const seed = 424242;
 
         const a = new SimWorld();
@@ -113,8 +92,8 @@ describe("Determinism gate (test-only hash)", () => {
         const b = new SimWorld();
         b.loadV1(save);
 
-        const hashA = getTestDeterminismHash(a as any);
-        const hashB = getTestDeterminismHash(b as any);
+        const hashA = getTestDeterminismHash(a);
+        const hashB = getTestDeterminismHash(b);
 
         expect(hashB).toBe(hashA);
     });

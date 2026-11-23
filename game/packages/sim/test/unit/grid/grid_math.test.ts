@@ -1,7 +1,16 @@
 import { describe, it, expect } from 'vitest';
-import { tileToChunk, tileToLocal, chunkAndLocal, chunkToTileOrigin, chunkKey, parseChunkKey, floorMod, rotateOffsets, computeFootprintTiles } from '../../../src/grid/grid_math';
-import { TileCoord } from '../../../src/types';
-
+import {
+    tileToChunk,
+    tileToLocal,
+    chunkAndLocal,
+    chunkToTileOrigin,
+    chunkKey,
+    parseChunkKey,
+    floorMod,
+    rotateOffsets,
+    computeFootprintTiles,
+} from '../../../src/grid/grid_math';
+import type { TileCoord } from '../../../src/types';
 
 describe('tileToChunk', () => {
     it('should convert positive tile coordinates to chunk coordinates', () => {
@@ -80,44 +89,66 @@ describe('floorMod', () => {
 });
 
 describe('rotateOffsets', () => {
-    const offsets: TileCoord[] = [{ x: 0, y: 0 }, { x: 0, y: 1 }];
+    const offsets: TileCoord[] = [
+        { x: 0, y: 0 },
+        { x: 0, y: 1 },
+    ];
 
     it('should not rotate when rotation is 0', () => {
-        expect(rotateOffsets(offsets, 0)).toEqual([{ x: 0, y: 0 }, { x: 0, y: 1 }]);
+        expect(rotateOffsets(offsets, 0)).toEqual([
+            { x: 0, y: 0 },
+            { x: 0, y: 1 },
+        ]);
     });
 
     it('should rotate 90 degrees when rotation is 1', () => {
-        expect(rotateOffsets(offsets, 1)).toEqual([{ x: 0, y: 0 }, { x: -1, y: 0 }]);
+        expect(rotateOffsets(offsets, 1)).toEqual([
+            { x: 0, y: 0 },
+            { x: -1, y: 0 },
+        ]);
     });
 
     it('should rotate 180 degrees when rotation is 2', () => {
-        expect(rotateOffsets(offsets, 2)).toEqual([{ x: 0, y: 0 }, { x: 0, y: -1 }]);
+        expect(rotateOffsets(offsets, 2)).toEqual([
+            { x: 0, y: 0 },
+            { x: 0, y: -1 },
+        ]);
     });
 
     it('should rotate 270 degrees when rotation is 3', () => {
-        expect(rotateOffsets(offsets, 3)).toEqual([{ x: 0, y: 0 }, { x: 1, y: 0 }]);
+        expect(rotateOffsets(offsets, 3)).toEqual([
+            { x: 0, y: 0 },
+            { x: 1, y: 0 },
+        ]);
     });
 });
 
 describe('computeFootprintTiles', () => {
     it('should compute absolute tile coordinates from anchor and offsets', () => {
         const anchor = { x: 10, y: 20 };
-        const offsets = [{ x: 0, y: 0 }, { x: 1, y: 0 }, { x: 0, y: 1 }];
-        
+        const offsets = [
+            { x: 0, y: 0 },
+            { x: 1, y: 0 },
+            { x: 0, y: 1 },
+        ];
+
         expect(computeFootprintTiles(anchor, offsets)).toEqual([
             { x: 10, y: 20 },
             { x: 11, y: 20 },
-            { x: 10, y: 21 }
+            { x: 10, y: 21 },
         ]);
     });
 
     it('should handle negative offsets', () => {
         const anchor = { x: 5, y: 5 };
-        const offsets = [{ x: -1, y: -1 }, { x: 1, y: 1 }];
-        
+        const offsets = [
+            { x: -1, y: -1 },
+            { x: 1, y: 1 },
+        ];
+
         expect(computeFootprintTiles(anchor, offsets)).toEqual([
             { x: 4, y: 4 },
-            { x: 6, y: 6 }
+            { x: 6, y: 6 },
         ]);
     });
 

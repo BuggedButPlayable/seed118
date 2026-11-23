@@ -6,7 +6,7 @@ describe('hash2d', () => {
         it('should return a 32-bit unsigned integer', () => {
             const result = hashU32(42);
             expect(result).toBeGreaterThanOrEqual(0);
-            expect(result).toBeLessThanOrEqual(0xFFFFFFFF);
+            expect(result).toBeLessThanOrEqual(0xffffffff);
             expect(Number.isInteger(result)).toBe(true);
         });
 
@@ -26,7 +26,7 @@ describe('hash2d', () => {
         it('should handle negative numbers', () => {
             const result = hashU32(-42);
             expect(result).toBeGreaterThanOrEqual(0);
-            expect(result).toBeLessThanOrEqual(0xFFFFFFFF);
+            expect(result).toBeLessThanOrEqual(0xffffffff);
         });
     });
 
@@ -34,7 +34,7 @@ describe('hash2d', () => {
         it('should return a 32-bit unsigned integer', () => {
             const result = hash2i(10, 20, 0);
             expect(result).toBeGreaterThanOrEqual(0);
-            expect(result).toBeLessThanOrEqual(0xFFFFFFFF);
+            expect(result).toBeLessThanOrEqual(0xffffffff);
             expect(Number.isInteger(result)).toBe(true);
         });
 
@@ -62,7 +62,7 @@ describe('hash2d', () => {
         it('should handle negative coordinates', () => {
             const result = hash2i(-10, -20, 0);
             expect(result).toBeGreaterThanOrEqual(0);
-            expect(result).toBeLessThanOrEqual(0xFFFFFFFF);
+            expect(result).toBeLessThanOrEqual(0xffffffff);
         });
     });
 
@@ -88,7 +88,7 @@ describe('hash2d', () => {
         });
 
         it('should handle max 24-bit value', () => {
-            const result = hashToUnitFloat(0x00FFFFFF);
+            const result = hashToUnitFloat(0x00ffffff);
             expect(result).toBeGreaterThan(0);
             expect(result).toBeLessThan(1);
         });

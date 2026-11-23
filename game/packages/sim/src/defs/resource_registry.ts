@@ -1,12 +1,12 @@
 /**
  * Registry for all built-in resource definitions.
- * 
+ *
  * Collects and exposes resource definitions for easy access.
  */
 
-import { DefId } from "../types/ids";
-import { HYDROGEN_DEFINITION } from "./resource_def";
-import { ResourceDefinition } from "../types/resource";
+import type { DefId } from '../types/ids';
+import { HYDROGEN_DEFINITION } from './resource_def';
+import type { ResourceDefinition } from '../types/resource';
 
 export const RESOURCE_DEFINITIONS: readonly ResourceDefinition[] = Object.freeze([
     HYDROGEN_DEFINITION,
@@ -24,7 +24,7 @@ export const getResourceDefinitionById = (id: DefId): ResourceDefinition => {
         }
     }
     throw new Error(`No resource definition found for id: ${id}`);
-}
+};
 
 /**
  * Retrieves a resource definition by its key.
@@ -39,4 +39,4 @@ export const getResourceDefinitionByKey = (key: string): ResourceDefinition => {
         }
     }
     throw new Error(`No resource definition found for key: ${key}`);
-}
+};
