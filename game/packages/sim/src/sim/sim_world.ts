@@ -30,6 +30,8 @@ import type { StructureRecord } from '../types/structure';
 export class SimWorld {
     private worldState = new WorldState();
     private gridModel = createWorldGrid(this.worldState);
+    /** Set when the world was replaced outside a tick; the next tick reports it as WorldLoaded. */
+    private isWorldLoadedPending = false;
     private readonly commandSystem = new CommandSystem();
     private readonly extractionSystem = new ExtractionSystem();
     private readonly transportSystem = new TransportSystem();
@@ -43,6 +45,7 @@ export class SimWorld {
      */
     public tick(commands: readonly Command[], outEvents: Event[]): void {
         this.worldState.currentTickOutEvents = outEvents;
+        this.reportWorldLoaded(outEvents);
         this.worldState.pendingFocusChunkCoord = null;
 
         this.commandSystem.tick(this.worldState, this.gridModel, commands, outEvents);
@@ -63,6 +66,7 @@ export class SimWorld {
         this.worldState = new WorldState();
         this.worldState.worldSeed = worldSeed;
         this.gridModel = createWorldGrid(this.worldState);
+        this.isWorldLoadedPending = true;
     }
 
     /**
@@ -101,6 +105,7 @@ export class SimWorld {
         const { state, grid } = loadSaveV2(parseSave(data));
         this.worldState = state;
         this.gridModel = grid;
+        this.isWorldLoadedPending = true;
     }
 
     // Snapshot getters (read-only access for view and tests, architecture §11)
@@ -156,6 +161,18 @@ export class SimWorld {
 
     public getResourceIdAt(tile: TileCoord): number {
         return this.gridModel.getResourceIdAt(tile);
+    }
+
+    /**
+     * A new or loaded world is announced as the first event of the next tick, so everything that mirrors the
+     * world (view, HUD) rebuilds from snapshots through the normal event stream (architecture §6).
+     */
+    private reportWorldLoaded(outEvents: Event[]): void {
+        if (!this.isWorldLoadedPending) {
+            return;
+        }
+        this.isWorldLoadedPending = false;
+        outEvents.push({ type: EventType.WorldLoaded });
     }
 
     private applyPendingFocusChange(outEvents: Event[]): void {

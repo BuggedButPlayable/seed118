@@ -41,6 +41,31 @@ describe('A new world', () => {
         expect(sim.getStructure(999)).toBeNull();
     });
 
+    it('is announced as the first event of the next tick, once', () => {
+        const sim = new SimWorld();
+        sim.startNewWorld(118);
+        const first: Event[] = [];
+        const second: Event[] = [];
+
+        sim.tick([], first);
+        sim.tick([], second);
+
+        expect(first[0]).toEqual({ type: EventType.WorldLoaded });
+        expect(findEvents(second, EventType.WorldLoaded)).toEqual([]);
+    });
+
+    it('a loaded world is announced the same way', () => {
+        const sim = new SimWorld();
+        sim.startNewWorld(118);
+        sim.tick([], []);
+        const events: Event[] = [];
+
+        sim.loadSave(sim.saveV2());
+        sim.tick([], events);
+
+        expect(findEvents(events, EventType.WorldLoaded)).toHaveLength(1);
+    });
+
     it('does not let the player remove the Core', () => {
         const sim = new SimWorld();
         sim.startNewWorld(118);

@@ -63,12 +63,6 @@ export class WorldRenderer {
         }
     }
 
-    /** Rebuilds the whole view from snapshots, e.g. after a new world or a load. */
-    public rebuild(view: SimView): void {
-        this.chunkLayer.redrawAll(view);
-        this.structureLayer.redrawAll(view);
-    }
-
     /**
      * Draws one frame from the camera's point of view, with the ghost of the active tool.
      * `frame.stepProgress` (0..1, progress towards the next tick) lets items glide between ticks.
@@ -88,8 +82,17 @@ export class WorldRenderer {
         this.app.render();
     }
 
+    /** Rebuilds the whole view from snapshots (on WorldLoaded: a new world or a load). */
+    private rebuild(view: SimView): void {
+        this.chunkLayer.redrawAll(view);
+        this.structureLayer.redrawAll(view);
+    }
+
     private applyEvent(view: SimView, event: Event): void {
         switch (event.type) {
+            case EventType.WorldLoaded:
+                this.rebuild(view);
+                return;
             case EventType.ChunkGenerated:
                 this.chunkLayer.drawChunk(view, event.coord);
                 return;
@@ -108,7 +111,6 @@ export class WorldRenderer {
             case EventType.Delivered:
             case EventType.FocusChunkUpdated:
             case EventType.TickAdvanced:
-            case EventType.WorldLoaded:
                 return;
         }
     }

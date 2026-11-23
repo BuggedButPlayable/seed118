@@ -150,6 +150,9 @@ commands → focus → chunk generation → extraction → transport → transfe
 ### Events
 - Events describe the result of applying commands or simulation progress.
 - Events must be sufficient for view updates without view-side state mutation.
+- Replacing the world (`startNewWorld`, `loadSave`) happens outside a tick, like setup. The next tick then starts
+  with `WorldLoaded`, and everything that mirrors the world (view, HUD, camera focus) rebuilds from snapshots when
+  it sees that event. There is no side channel for world swaps.
 
 ## 7. Rotation Policy
 

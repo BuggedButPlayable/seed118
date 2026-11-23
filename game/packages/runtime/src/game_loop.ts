@@ -1,4 +1,4 @@
-import { CommandType, SIM_TICKS_PER_SECOND, isSameCoord, tileToChunk } from '@seed118/sim';
+import { CommandType, EventType, SIM_TICKS_PER_SECOND, isSameCoord, tileToChunk } from '@seed118/sim';
 import type { ChunkCoord, Event, SimCommandQueue, SimWorld } from '@seed118/sim';
 import type { BuildPreview, Camera, WorldRenderer } from '@seed118/render';
 import type { DeliveryCounter } from '@seed118/ui';
@@ -38,19 +38,6 @@ export class GameLoop {
         requestAnimationFrame(this.frame);
     }
 
-    /** Swaps the world (e.g. a new world) and brings everything that mirrors it up to date. */
-    public replaceWorld(change: () => void): void {
-        change();
-        this.syncWithWorld();
-    }
-
-    /** Redraws the view, resets the HUD and re-sends the focus chunk from the current world. */
-    public syncWithWorld(): void {
-        this.focusChunk = null;
-        this.options.renderer.rebuild(this.options.sim);
-        this.options.deliveryCounter.reset(this.options.sim);
-    }
-
     private readonly frame = (nowMs: number): void => {
         const elapsedMs = this.lastFrameMs === null ? 0 : nowMs - this.lastFrameMs;
         this.lastFrameMs = nowMs;
@@ -72,8 +59,12 @@ export class GameLoop {
     private tickOnce(): void {
         const events: Event[] = [];
         this.options.sim.tick(this.options.commands.drainCommands(), events);
+        // A new or loaded world has no focus yet; send it again on the next frame.
+        if (events.some((event) => event.type === EventType.WorldLoaded)) {
+            this.focusChunk = null;
+        }
         this.options.renderer.applyEvents(this.options.sim, events);
-        this.options.deliveryCounter.applyEvents(events);
+        this.options.deliveryCounter.applyEvents(this.options.sim, events);
     }
 
     /** Asks the simulation to generate chunks around the camera whenever it enters a new chunk. */

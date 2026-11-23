@@ -54,13 +54,12 @@ async function startGame(host: HTMLElement): Promise<void> {
         deliveryCounter,
     });
 
-    loop.syncWithWorld();
-    worldMenu.onNewWorld(() =>
-        loop.replaceWorld(() => {
-            saves.clear();
-            sim.startNewWorld(DEFAULT_WORLD_SEED);
-        }),
-    );
+    worldMenu.onNewWorld(() => {
+        // Intent queued for the old world must not land in the new one.
+        commands.drainCommands();
+        saves.clear();
+        sim.startNewWorld(DEFAULT_WORLD_SEED);
+    });
     if (restored.kind === 'broken') {
         worldMenu.showNotice(
             `The saved world could not be loaded (${restored.reason}). A new world was started; ` +

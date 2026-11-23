@@ -24,7 +24,7 @@ export function formatDeliveries(counts: ReadonlyMap<ItemKey, number>): string {
     ).join('\n');
 }
 
-/** HUD counter of items delivered to the Core. Starts from a snapshot, then follows Delivered events. */
+/** HUD counter of items delivered to the Core: reads the totals on WorldLoaded, then follows Delivered events. */
 export class DeliveryCounter {
     private readonly element = document.createElement('div');
     private readonly counts = new Map<ItemKey, number>();
@@ -35,24 +35,25 @@ export class DeliveryCounter {
         this.render();
     }
 
-    /** Reads the totals from the simulation, e.g. after a new world or a load. */
-    public reset(view: Pick<SimWorld, 'getDeliveredCount'>): void {
-        for (const item of ITEM_DEFINITIONS) {
-            this.counts.set(item.key, view.getDeliveredCount(item.key));
+    public applyEvents(view: Pick<SimWorld, 'getDeliveredCount'>, events: readonly Event[]): void {
+        for (const event of events) {
+            this.applyEvent(view, event);
         }
         this.render();
     }
 
-    public applyEvents(events: readonly Event[]): void {
-        let hasChanged = false;
-        for (const event of events) {
-            if (event.type === EventType.Delivered) {
-                this.counts.set(event.itemKey, event.total);
-                hasChanged = true;
-            }
+    private applyEvent(view: Pick<SimWorld, 'getDeliveredCount'>, event: Event): void {
+        if (event.type === EventType.WorldLoaded) {
+            this.readTotals(view);
         }
-        if (hasChanged) {
-            this.render();
+        if (event.type === EventType.Delivered) {
+            this.counts.set(event.itemKey, event.total);
+        }
+    }
+
+    private readTotals(view: Pick<SimWorld, 'getDeliveredCount'>): void {
+        for (const item of ITEM_DEFINITIONS) {
+            this.counts.set(item.key, view.getDeliveredCount(item.key));
         }
     }
 
