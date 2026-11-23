@@ -127,7 +127,17 @@ commands → focus → chunk generation → extraction → transport → transfe
 - **Transfer**: senders take turns in ascending structure id. If the receiver is full but its own item is
   ready, the receiver moves first (downstream first). Full lines therefore advance without gaps,
   independent of build order. Each structure gets one turn per tick, so cycles stay deterministic.
+- **Intake** (`intake: 'deliver'`, the Core): takes every accepted item at once, never fills up, adds it to
+  the delivered count and emits `Delivered { structureId, itemKey, total }`.
 - Removing a structure drops the item it holds.
+
+### 5.4 Placement Rule and World Start
+
+- There is one placement rule (`systems/placement_rules.ts`). The command system enforces it, and the preview
+  asks it through `SimWorld.checkPlacement`, so the two cannot disagree.
+- Structures with an `extraction` spec may only be placed on a resource tile (`RejectReason.NoResource`).
+- `SimWorld.startNewWorld(seed)` resets the world and places `WORLD_START_STRUCTURES` (M1: the cold Core at
+  the origin). `reset(seed)` stays as an empty world for tests.
 
 ## 6. Commands and Events
 
@@ -192,9 +202,10 @@ Load rules:
 Gameplay/UI/View may only rely on what `packages/sim/src/index.ts` exports, in particular:
 - `SimCommandQueue.enqueueCommand(command)` / `drainCommands()`
 - `SimWorld.tick(commands, outEvents)`
-- Snapshot getters on `SimWorld` (`getStructures`, `getStructureIdAt`, `getResourceIdAt`, `getItemSlots`, `getTickIndex`, `getWorldSeed`)
+- World setup: `SimWorld.startNewWorld(seed)`
+- Snapshot getters and queries on `SimWorld` (`getStructures`, `getStructureIdAt`, `getResourceIdAt`, `getItemSlots`, `getDeliveredCount`, `checkPlacement`, `getTickIndex`, `getWorldSeed`)
 - Save/Load entry points (`saveV1`, `loadV1`)
-- Definitions and shared geometry (registries, `rotateOffsets`, `computeFootprintTiles`, `computeWorldPorts`, `rotateSide`, `oppositeSide`, `neighbourAcross`)
+- Definitions and shared geometry (registries, `rotateOffsets`, `computeFootprintTiles`, `computePlacedFootprint`, `computeWorldPorts`, `rotateSide`, `oppositeSide`, `neighbourAcross`)
 
 Anything else is internal and must not be called across layers.
 

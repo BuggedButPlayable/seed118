@@ -5,7 +5,7 @@
 
 import { byCoord, byId } from '../core/ordering';
 import { getStructureDefinitionById, getStructureDefinitionByKey } from '../defs/structure_registry';
-import { computeFootprintTiles, dedupeChunkCoords, rotateOffsets, tileToChunk } from '../grid/grid_math';
+import { computePlacedFootprint, dedupeChunkCoords, tileToChunk } from '../grid/grid_math';
 import { GridModel } from '../grid/grid_model';
 import { StructureStore } from '../state/structure_store';
 import { WorldState } from '../state/world_state';
@@ -104,10 +104,7 @@ export function loadSaveGameV1(save: SaveGameV1): { state: WorldState; grid: Gri
 
     for (const structure of records) {
         const definition = getStructureDefinitionById(structure.definitionId);
-        const tiles = computeFootprintTiles(
-            structure.position,
-            rotateOffsets(definition.footprint, structure.rotation),
-        );
+        const tiles = computePlacedFootprint(structure.position, structure.rotation, definition.footprint);
 
         for (const tile of tiles) {
             grid.setStructureIdAt(tile, structure.id);

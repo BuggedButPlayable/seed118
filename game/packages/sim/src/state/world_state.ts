@@ -3,7 +3,7 @@ import type { ItemSlot } from './item_slot';
 import { PerStructureStore } from './per_structure_store';
 import { StructureStore } from './structure_store';
 import type { ChunkCoord } from '../types';
-import type { StructureId } from '../types/ids';
+import type { DefId, StructureId } from '../types/ids';
 import type { Event } from '../types/events';
 
 /**
@@ -27,6 +27,8 @@ export class WorldState {
     public itemSlots = new PerStructureStore<ItemSlot>();
     /** Ticks a collector has already worked on its next item. */
     public extractionProgress = new PerStructureStore<number>();
+    /** Items delivered to the Core so far, by item definition id. */
+    public deliveredCounts = new Map<DefId, number>();
 
     /** Event sink of the tick in progress; null outside of SimWorld.tick(). */
     public currentTickOutEvents: Event[] | null = null;

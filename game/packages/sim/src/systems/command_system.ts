@@ -1,18 +1,13 @@
 import { STRUCTURE_ID_NONE } from '../core/constants';
 import { getStructureDefinitionById } from '../defs/structure_registry';
 import type { GridModel } from '../grid/grid_model';
-import {
-    SIDE_COUNT,
-    computeFootprintTiles,
-    dedupeChunkCoords,
-    rotateOffsets,
-    tileToChunk,
-} from '../grid/grid_math';
+import { computePlacedFootprint, dedupeChunkCoords, tileToChunk } from '../grid/grid_math';
 import type { WorldState } from '../state/world_state';
 import { CommandType } from '../types/commands';
 import type { Command } from '../types/commands';
 import { EventType, RejectReason } from '../types/events';
 import type { Event } from '../types/events';
+import { checkPlacement } from './placement_rules';
 
 type PlaceStructureCommand = Extract<Command, { type: CommandType.PlaceStructure }>;
 type RemoveStructureCommand = Extract<Command, { type: CommandType.RemoveStructure }>;
@@ -64,26 +59,14 @@ export class CommandSystem {
         command: PlaceStructureCommand,
         outEvents: Event[],
     ): void {
-        if (!isValidRotation(command.rotation)) {
-            outEvents.push(rejected(command, RejectReason.InvalidPayload, 'Rotation must be 0, 1, 2 or 3.'));
+        const rejection = checkPlacement(grid, command);
+        if (rejection) {
+            outEvents.push(rejected(command, rejection.reason, rejection.details));
             return;
         }
 
         const definition = getStructureDefinitionById(command.definitionId);
-        if (!definition.placeable) {
-            outEvents.push(rejected(command, RejectReason.NotPlaceable, 'This structure cannot be placed.'));
-            return;
-        }
-
-        const footprintTiles = computeFootprintTiles(
-            command.coord,
-            rotateOffsets(definition.footprint, command.rotation),
-        );
-        if (footprintTiles.some((tile) => grid.hasStructureAt(tile))) {
-            outEvents.push(rejected(command, RejectReason.Occupied, 'Footprint area is occupied.'));
-            return;
-        }
-
+        const footprintTiles = computePlacedFootprint(command.coord, command.rotation, definition.footprint);
         const structure = state.structureStore.createStructure(
             command.definitionId,
             command.rotation,
@@ -124,9 +107,10 @@ export class CommandSystem {
             return;
         }
 
-        const footprintTiles = computeFootprintTiles(
+        const footprintTiles = computePlacedFootprint(
             structure.position,
-            rotateOffsets(definition.footprint, structure.rotation),
+            structure.rotation,
+            definition.footprint,
         );
         for (const tile of footprintTiles) {
             if (grid.getStructureIdAt(tile) === structureId) {
@@ -148,8 +132,4 @@ export class CommandSystem {
 /** Builds the canonical rejection event (architecture freeze: command rejection contract). */
 function rejected(command: Command, reason: RejectReason, details: string): Event {
     return { type: EventType.CommandRejected, rejectedCommand: command, reason, details };
-}
-
-function isValidRotation(rotation: number): boolean {
-    return Number.isInteger(rotation) && rotation >= 0 && rotation < SIDE_COUNT;
 }

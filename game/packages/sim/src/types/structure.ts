@@ -21,11 +21,17 @@ export interface TransportSpec {
     transitTicks: number;
 }
 
-/** Extracts the item of the resource under the anchor tile (collectors). */
+/** Extracts the item of the resource under the anchor tile (collectors). Placeable only on a resource. */
 export interface ExtractionSpec {
     /** Ticks needed to extract one item. */
     ticksPerItem: number;
 }
+
+/**
+ * What a structure does with items it takes in without holding them.
+ * `deliver`: counts them as delivered (the Core).
+ */
+export type IntakeKind = 'deliver';
 
 export interface StructureDefinition {
     id: DefId;
@@ -37,6 +43,8 @@ export interface StructureDefinition {
     rotatable: boolean;
     transport?: TransportSpec;
     extraction?: ExtractionSpec;
+    /** Takes items in through its input ports without ever filling up. */
+    intake?: IntakeKind;
 }
 
 export interface StructureRecord {

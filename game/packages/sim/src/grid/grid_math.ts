@@ -129,6 +129,21 @@ export function computeFootprintTiles(anchor: TileCoord, offsets: readonly TileC
 }
 
 /**
+ * Tiles a structure covers when placed: rotates its footprint around the anchor, then moves it there.
+ * @param anchor - Anchor tile.
+ * @param rotation - Rotation chosen at placement time.
+ * @param footprint - Footprint offsets from the structure definition.
+ * @returns Absolute tiles, in footprint order.
+ */
+export function computePlacedFootprint(
+    anchor: TileCoord,
+    rotation: Rotation,
+    footprint: readonly TileCoord[],
+): TileCoord[] {
+    return computeFootprintTiles(anchor, rotateOffsets(footprint, rotation));
+}
+
+/**
  * Compares two coordinates by value.
  * @param left - First coordinate.
  * @param right - Second coordinate.

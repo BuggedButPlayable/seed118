@@ -1,6 +1,6 @@
 import type { StructureDefinition } from '../../types/structure';
 
-/** The Core (S.E.E.D. 118 itself): 2x2, one input on every outer tile edge, cannot be removed. */
+/** The Core (S.E.E.D. 118 itself): 2x2, one input on every outer tile edge, cannot be removed, counts deliveries. */
 export const CORE_DEFINITION: StructureDefinition = {
     id: 1,
     key: 'core',
@@ -23,4 +23,5 @@ export const CORE_DEFINITION: StructureDefinition = {
     deletable: false,
     placeable: true,
     rotatable: false,
+    intake: 'deliver',
 };

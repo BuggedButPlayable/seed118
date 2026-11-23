@@ -8,12 +8,17 @@ import { CommandSystem } from '../systems/command_system';
 import { ExtractionSystem } from '../systems/extraction_system';
 import { TransferSystem } from '../systems/transfer_system';
 import { TransportSystem } from '../systems/transport_system';
-import { getItemDefinitionById } from '../defs/item_registry';
+import { getItemDefinitionById, getItemDefinitionByKey } from '../defs/item_registry';
+import { getStructureDefinitionByKey } from '../defs/structure_registry';
+import { WORLD_START_STRUCTURES } from '../defs/world_start_def';
+import { checkPlacement } from '../systems/placement_rules';
+import type { PlacementRejection, PlacementRequest } from '../systems/placement_rules';
 import type { ChunkCoord, TileCoord } from '../types';
+import { CommandType } from '../types/commands';
 import type { Command } from '../types/commands';
 import { EventType } from '../types/events';
 import type { Event } from '../types/events';
-import type { ItemSlotSnapshot } from '../types/item';
+import type { ItemKey, ItemSlotSnapshot } from '../types/item';
 import type { SaveGameV1 } from '../types/save_v1';
 import type { StructureRecord } from '../types/structure';
 
@@ -48,7 +53,7 @@ export class SimWorld {
         this.ensureActiveChunksGenerated();
         this.extractionSystem.tick(this.worldState, this.gridModel);
         this.transportSystem.tick(this.worldState);
-        this.transferSystem.tick(this.worldState, this.gridModel);
+        this.transferSystem.tick(this.worldState, this.gridModel, outEvents);
 
         this.worldState.tickIndex += 1;
         outEvents.push({ type: EventType.TickAdvanced, tickIndex: this.worldState.tickIndex });
@@ -61,6 +66,28 @@ export class SimWorld {
         this.worldState = new WorldState();
         this.worldState.worldSeed = worldSeed;
         this.gridModel = this.createGrid();
+    }
+
+    /**
+     * Resets the world and places what every new world starts with (the cold Core at the origin).
+     * @throws If a start structure cannot be placed: the start definition is broken.
+     */
+    public startNewWorld(worldSeed: number): void {
+        this.reset(worldSeed);
+        for (const start of WORLD_START_STRUCTURES) {
+            const command: Command = {
+                type: CommandType.PlaceStructure,
+                definitionId: getStructureDefinitionByKey(start.key).id,
+                coord: start.coord,
+                rotation: start.rotation,
+            };
+            const rejection = checkPlacement(this.gridModel, command);
+            if (rejection) {
+                throw new Error(`Start structure "${start.key}" cannot be placed: ${rejection.details}`);
+            }
+            // World setup, like load, happens outside a tick; the events are not needed (architecture §2).
+            this.commandSystem.applyCommand(this.worldState, this.gridModel, command, []);
+        }
     }
 
     /** Serializes everything that cannot be regenerated from the seed. */
@@ -98,6 +125,19 @@ export class SimWorld {
             itemKey: getItemDefinitionById(slot.itemId).key,
             ticksRemaining: slot.ticksRemaining,
         }));
+    }
+
+    /** How many of the given item have been delivered to the Core so far. */
+    public getDeliveredCount(itemKey: ItemKey): number {
+        return this.worldState.deliveredCounts.get(getItemDefinitionByKey(itemKey).id) ?? 0;
+    }
+
+    /**
+     * Asks whether a placement would succeed right now, without changing anything (for the preview).
+     * @returns Why it would be rejected, or null if it is allowed.
+     */
+    public checkPlacement(request: PlacementRequest): PlacementRejection | null {
+        return checkPlacement(this.gridModel, request);
     }
 
     public getStructureIdAt(tile: TileCoord): number {

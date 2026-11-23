@@ -1,5 +1,6 @@
 import { SimWorld } from '../../src/sim/sim_world';
 import type { TileCoord } from '../../src/types/coords';
+import type { Command } from '../../src/types/commands';
 import type { Event } from '../../src/types/events';
 import { focusCommand, placeCommand } from './commands';
 import { MOCK_MULTITILE, MOCK_SIMPLE_STRUCTURE } from './mock_structures';
@@ -13,6 +14,17 @@ export function createFocusedWorld(worldSeed: number): SimWorld {
     sim.reset(worldSeed);
     sim.tick([focusCommand({ x: 0, y: 0 })], []);
     return sim;
+}
+
+/**
+ * Runs `ticks` ticks: `commands` go into the first one, the rest are empty.
+ * @param outEvents Receives the events of all ticks; omit it if the test does not need them.
+ */
+export function run(sim: SimWorld, ticks: number, commands: Command[] = [], outEvents: Event[] = []): void {
+    sim.tick(commands, outEvents);
+    for (let tick = 1; tick < ticks; tick++) {
+        sim.tick([], outEvents);
+    }
 }
 
 /**
